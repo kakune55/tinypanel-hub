@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"tinypanel-hub"
 	"tinypanel-hub/internal/config"
 	"tinypanel-hub/internal/httpapi"
 	"tinypanel-hub/internal/store"
@@ -23,6 +25,10 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	if err := ensureEtc(logger); err != nil {
+		logger.Error("ensure etc assets", "err", err)
+		os.Exit(1)
+	}
 
 	cfg, err := config.Load(*configPath)
 	if err != nil {
@@ -75,6 +81,32 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("server stopped")
+}
+
+func ensureEtc(logger *slog.Logger) error {
+	const etcDir = "etc"
+	const examplePath = "etc/config.example.json"
+
+	if err := os.MkdirAll(etcDir, 0755); err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(examplePath); err == nil {
+		return nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	data, err := fs.ReadFile(tinypanelhub.EtcFS, examplePath)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(examplePath, data, 0644); err != nil {
+		return err
+	}
+	logger.Info("created example config", "path", examplePath)
+	return nil
 }
 
 func newWeatherProvider(cfg config.Config) (httpapi.WeatherProvider, error) {
