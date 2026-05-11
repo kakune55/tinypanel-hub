@@ -4,7 +4,8 @@
     "api_token": "tk-123"
   },
   "storage": {
-    "data_file": "data/tinypanel.json"
+    "data_file": "data/tinypanel.json",
+    "telemetry_file": "data/telemetry.jsonl"
   },
   "weather": {
     "provider": "qweather",
@@ -16,7 +17,7 @@
     "unit": "m",
     "hours": "24h",
     "days": "7d",
-    "cache_ttl": "10m",
+    "cache_ttl": "60m",
     "timeout": "5s"
   }
 }

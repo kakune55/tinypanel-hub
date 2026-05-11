@@ -4,7 +4,7 @@
 
 ## 配置
 
-在 `config.json` 中配置：
+在 `etc/config.json` 中配置：
 
 ```json
 {

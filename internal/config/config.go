@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-const DefaultPath = "config.json"
+const DefaultPath = "etc/config.json"
 
 type Config struct {
 	Server  Server  `json:"server"`
@@ -22,7 +22,8 @@ type Server struct {
 }
 
 type Storage struct {
-	DataFile string `json:"data_file"`
+	DataFile      string `json:"data_file"`
+	TelemetryFile string `json:"telemetry_file"`
 }
 
 type Weather struct {
@@ -45,7 +46,8 @@ func Default() Config {
 			Addr: ":8080",
 		},
 		Storage: Storage{
-			DataFile: "data/tinypanel.json",
+			DataFile:      "data/tinypanel.json",
+			TelemetryFile: "data/telemetry.jsonl",
 		},
 		Weather: Weather{
 			Provider: "manual",
@@ -102,6 +104,9 @@ func (c *Config) fillDefaults() {
 	}
 	if c.Storage.DataFile == "" {
 		c.Storage.DataFile = def.Storage.DataFile
+	}
+	if c.Storage.TelemetryFile == "" {
+		c.Storage.TelemetryFile = def.Storage.TelemetryFile
 	}
 	if c.Weather.Provider == "" {
 		c.Weather.Provider = def.Weather.Provider

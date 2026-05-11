@@ -17,29 +17,31 @@ go run ./cmd/tinypanel-hub
 
 默认监听地址：`:8080`
 
-默认数据文件：`data/tinypanel.json`
+默认状态文件：`data/tinypanel.json`
+
+默认遥测日志：`data/telemetry.jsonl`
 
 ## 配置
 
-服务使用 JSON 配置文件。默认配置路径是 `config.json`。
+服务使用 JSON 配置文件。默认配置路径是 `etc/config.json`。
 
 创建本地配置：
 
 ```powershell
-Copy-Item config.example.json config.json
+Copy-Item etc/config.example.json etc/config.json
 go run ./cmd/tinypanel-hub
 ```
 
 也可以指定其他配置文件：
 
 ```powershell
-go run ./cmd/tinypanel-hub -config .\config.example.json
+go run ./cmd/tinypanel-hub -config .\etc\config.example.json
 ```
 
 或者通过环境变量指定配置路径：
 
 ```powershell
-$env:TINYPANEL_CONFIG=".\config.example.json"
+$env:TINYPANEL_CONFIG=".\etc\config.example.json"
 go run ./cmd/tinypanel-hub
 ```
 
@@ -52,7 +54,8 @@ go run ./cmd/tinypanel-hub
     "api_token": "change-me"
   },
   "storage": {
-    "data_file": "data/tinypanel.json"
+    "data_file": "data/tinypanel.json",
+    "telemetry_file": "data/telemetry.jsonl"
   },
   "weather": {
     "provider": "qweather",
@@ -70,9 +73,11 @@ go run ./cmd/tinypanel-hub
 }
 ```
 
-`config.json` 已加入 `.gitignore`，可以放本地真实 token。仓库里保留 `config.example.json` 作为模板。
+`etc/config.json` 已加入 `.gitignore`，可以放本地真实 token，也方便 Docker 挂载配置目录。仓库里保留 `etc/config.example.json` 作为模板。
 
 天气配置里 `provider` 设为 `qweather` 时，服务会在 `GET /api/v1/weather` 或 `GET /api/v1/snapshot` 被请求时懒加载和风天气实时天气接口，并按 `cache_ttl` 缓存结果，默认 10 分钟。`api_host` 使用和风天气控制台中的 API Host；认证可二选一配置 `api_key` 或 `bearer_token`。`location` 支持 LocationID 或经纬度，例如 `101020100` 或 `121.47,31.23`。
+
+存储配置里 `data_file` 保存当前服务状态，包括天气缓存、消息和 ack 状态；`telemetry_file` 使用 JSONL，每行一条遥测记录，适合持续追加写入和后续流式处理。
 
 ## 鉴权
 
@@ -177,14 +182,17 @@ Invoke-RestMethod http://localhost:8080/api/v1/telemetry -Method Post -Headers $
 ## 项目结构
 
 ```text
-cmd/tinypanel-hub/main.go   服务进程入口
-internal/config/config.go   JSON 配置加载
-internal/domain/models.go   领域数据结构
-internal/store/jsonfile.go  内存结构 + JSON 文件存储
-internal/httpapi/server.go  HTTP Server 类型和入口
-internal/httpapi/router.go  路由注册
-internal/httpapi/auth.go    Token 鉴权
-internal/httpapi/*.go       各资源 handler 和 HTTP 工具
+cmd/tinypanel-hub/main.go       服务进程入口
+internal/config/config.go       JSON 配置加载
+internal/domain/models.go       领域数据结构
+internal/store/state.go         JSON 状态文件
+internal/store/telemetry_log.go JSONL 遥测日志
+internal/store/messages.go      消息和订阅存储逻辑
+internal/store/telemetry.go     遥测存储逻辑
+internal/httpapi/server.go      HTTP Server 类型和入口
+internal/httpapi/router.go      路由注册
+internal/httpapi/auth.go        Token 鉴权
+internal/httpapi/*.go           各资源 handler 和 HTTP 工具
 ```
 
 ## 验证

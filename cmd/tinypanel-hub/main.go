@@ -30,7 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	dataStore, err := store.OpenJSONFile(cfg.Storage.DataFile)
+	dataStore, err := store.OpenFiles(cfg.Storage.DataFile, cfg.Storage.TelemetryFile)
 	if err != nil {
 		logger.Error("open store", "err", err)
 		os.Exit(1)
@@ -50,7 +50,7 @@ func main() {
 
 	errc := make(chan error, 1)
 	go func() {
-		logger.Info("tinypanel hub listening", "addr", cfg.Server.Addr, "data", cfg.Storage.DataFile, "config", *configPath)
+		logger.Info("tinypanel hub listening", "addr", cfg.Server.Addr, "data", cfg.Storage.DataFile, "telemetry", cfg.Storage.TelemetryFile, "config", *configPath)
 		errc <- server.ListenAndServe()
 	}()
 
