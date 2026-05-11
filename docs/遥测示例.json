@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "device_id": "tinypanel-001",
+  "boot_id": "boot_20260510_162000",
+  "sequence": 123,
+  "report_timestamp": "2026-05-10T16:20:00+08:00",
+  "uptime_s": 8642300,
+
+  "power": {
+    "battery": {
+      "raw_adc": 1882,
+      "raw_voltage_mv": 3950,
+      "voltage_mv": 3950,
+      "percentage": 78,
+      "status": "discharging"
+    },
+    "usb_connected": false
+  },
+  "environment": {
+    "shtc3": {
+      "temperature_c": 22.5,
+      "humidity_rh": 45.0,
+      "sensor_ok": true
+    }
+  },
+  "network": {
+    "wifi_connected": true,
+    "ssid": "HomeNetwork",
+    "rssi_dbm": -60,
+    "ip": "192.168.3.42"
+  },
+  "system": {
+    "free_heap_bytes": 184320,
+    "free_psram_bytes": 6291456,
+    "ntp_sync": true
+  },
+  "storage": {
+    "sd_card_present": true,
+    "sd_card_total_mb": 2048,
+    "sd_card_used_mb": 512
+  },
+  "app": {
+  }
+}

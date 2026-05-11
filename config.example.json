@@ -1,0 +1,22 @@
+{
+  "server": {
+    "addr": ":8080",
+    "api_token": "tk-123"
+  },
+  "storage": {
+    "data_file": "data/tinypanel.json"
+  },
+  "weather": {
+    "provider": "qweather",
+    "api_host": "your-api-host.qweatherapi.com",
+    "api_key": "your-api-key",
+    "bearer_token": "",
+    "location": "101020100",
+    "lang": "zh",
+    "unit": "m",
+    "hours": "24h",
+    "days": "7d",
+    "cache_ttl": "10m",
+    "timeout": "5s"
+  }
+}

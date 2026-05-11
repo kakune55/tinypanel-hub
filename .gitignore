@@ -1,0 +1,6 @@
+.gocache/
+bin/
+data/
+config.json
+*.exe
+*.test
