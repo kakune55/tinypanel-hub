@@ -7,6 +7,7 @@
 - 使用 Go 标准库 HTTP 服务。
 - 不引入重型数据库，当前使用内存结构加 JSON 文件持久化。
 - 提供天气、消息通知、遥测上报、面板快照等 API。
+- 提供 TODO 列表 API，支持客户端增删改查和版本 CAS。
 - 代码按职责拆分，避免把所有逻辑塞进一个包或一个文件。
 
 ## 运行
@@ -163,6 +164,40 @@ Invoke-RestMethod http://localhost:8080/api/v1/messages/1 -Headers $headers
 Invoke-RestMethod http://localhost:8080/api/v1/messages/1/ack -Method Post -Headers $headers -ContentType "application/json" -Body '{"device_id":"tinypanel-001"}'
 ```
 
+### TODO 列表
+
+详细协议见 [docs/todo.md](docs/todo.md)。
+
+```http
+GET /api/v1/todos
+POST /api/v1/todos
+GET /api/v1/todos/{id}
+PATCH /api/v1/todos/{id}
+DELETE /api/v1/todos/{id}
+```
+
+TODO 状态使用数字：`0` 未完成，`1` 正在完成，`2` 已完成。`text` 最多 50 个字符。
+
+修改和删除使用 CAS：客户端必须提交当前 `version`，版本不匹配时返回 `409`。
+
+创建 TODO：
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/v1/todos -Method Post -Headers $headers -ContentType "application/json" -Body '{"text":"整理桌面","status":0}'
+```
+
+修改状态：
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Patch -Headers $headers -ContentType "application/json" -Body '{"version":1,"status":1}'
+```
+
+删除 TODO：
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Delete -Headers $headers -ContentType "application/json" -Body '{"version":2}'
+```
+
 ### 遥测
 
 ```http
@@ -188,6 +223,7 @@ internal/domain/models.go       领域数据结构
 internal/store/state.go         JSON 状态文件
 internal/store/telemetry_log.go JSONL 遥测日志
 internal/store/messages.go      消息和订阅存储逻辑
+internal/store/todos.go         TODO 存储逻辑
 internal/store/telemetry.go     遥测存储逻辑
 internal/httpapi/server.go      HTTP Server 类型和入口
 internal/httpapi/router.go      路由注册

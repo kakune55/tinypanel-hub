@@ -16,9 +16,11 @@ type stateFile struct {
 
 type stateData struct {
 	NextMessageID int64              `json:"next_message_id"`
+	NextTodoID    int64              `json:"next_todo_id"`
 	Weather       domain.Weather     `json:"weather"`
 	Messages      []domain.Message   `json:"messages"`
 	MessageAcks   map[string][]int64 `json:"message_acks"`
+	Todos         []domain.Todo      `json:"todos"`
 }
 
 func newStateFile(path string) *stateFile {
@@ -26,6 +28,7 @@ func newStateFile(path string) *stateFile {
 		path: path,
 		data: stateData{
 			NextMessageID: 1,
+			NextTodoID:    1,
 			MessageAcks:   map[string][]int64{},
 			Weather:       defaultWeather(),
 		},
@@ -71,6 +74,9 @@ func (f *stateFile) save() error {
 func (f *stateFile) normalize() {
 	if f.data.NextMessageID == 0 {
 		f.data.NextMessageID = int64(len(f.data.Messages)) + 1
+	}
+	if f.data.NextTodoID == 0 {
+		f.data.NextTodoID = nextTodoID(f.data.Todos)
 	}
 	if f.data.MessageAcks == nil {
 		f.data.MessageAcks = map[string][]int64{}

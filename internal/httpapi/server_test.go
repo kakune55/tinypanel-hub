@@ -25,6 +25,7 @@ type memoryStore struct {
 	weather   domain.Weather
 	messages  []domain.Message
 	acks      map[string]map[int64]bool
+	todos     []domain.Todo
 	telemetry []domain.Telemetry
 }
 
@@ -32,6 +33,7 @@ func (s *memoryStore) Snapshot() domain.Snapshot {
 	return domain.Snapshot{
 		Weather:   s.weather,
 		Messages:  s.messages,
+		Todos:     s.todos,
 		Telemetry: s.telemetry,
 	}
 }
@@ -85,6 +87,62 @@ func (s *memoryStore) AckMessage(deviceID string, messageID int64) (bool, error)
 	}
 	s.acks[deviceID][messageID] = true
 	return true, nil
+}
+
+func (s *memoryStore) Todos() []domain.Todo {
+	return s.todos
+}
+
+func (s *memoryStore) Todo(id int64) (domain.Todo, bool) {
+	for _, todo := range s.todos {
+		if todo.ID == id {
+			return todo, true
+		}
+	}
+	return domain.Todo{}, false
+}
+
+func (s *memoryStore) AddTodo(text string, status int) (domain.Todo, error) {
+	now := time.Now().UTC()
+	todo := domain.Todo{ID: int64(len(s.todos) + 1), Text: text, Status: status, Version: 1, CreatedAt: now, UpdatedAt: now}
+	s.todos = append(s.todos, todo)
+	return todo, nil
+}
+
+func (s *memoryStore) UpdateTodo(id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error) {
+	for i, todo := range s.todos {
+		if todo.ID != id {
+			continue
+		}
+		if todo.Version != version {
+			return todo, true, false, nil
+		}
+		if patch.Text != nil {
+			todo.Text = *patch.Text
+		}
+		if patch.Status != nil {
+			todo.Status = *patch.Status
+		}
+		todo.Version++
+		todo.UpdatedAt = time.Now().UTC()
+		s.todos[i] = todo
+		return todo, true, true, nil
+	}
+	return domain.Todo{}, false, false, nil
+}
+
+func (s *memoryStore) DeleteTodo(id, version int64) (bool, bool, error) {
+	for i, todo := range s.todos {
+		if todo.ID != id {
+			continue
+		}
+		if todo.Version != version {
+			return true, false, nil
+		}
+		s.todos = append(s.todos[:i], s.todos[i+1:]...)
+		return true, true, nil
+	}
+	return false, false, nil
 }
 
 func (s *memoryStore) Telemetry(limit int) []domain.Telemetry {
@@ -194,6 +252,36 @@ func TestMessageSubscriptionFlow(t *testing.T) {
 	}
 }
 
+func TestTodoCASFlow(t *testing.T) {
+	store := newMemoryStore()
+	handler := New(store, slog.Default(), Options{APIToken: "secret"})
+
+	rec := postJSON(t, handler, "/api/v1/todos", `{"text":"写测试","status":0}`, http.StatusCreated)
+	body := rec.Body.String()
+	if !strings.Contains(body, `"id":1`) || !strings.Contains(body, `"version":1`) || !strings.Contains(body, `"status":0`) {
+		t.Fatalf("unexpected todo create response: %s", body)
+	}
+
+	rec = patchJSON(t, handler, "/api/v1/todos/1", `{"version":1,"status":1}`, http.StatusOK)
+	if !strings.Contains(rec.Body.String(), `"version":2`) || !strings.Contains(rec.Body.String(), `"status":1`) {
+		t.Fatalf("unexpected todo patch response: %s", rec.Body.String())
+	}
+
+	patchJSON(t, handler, "/api/v1/todos/1", `{"version":1,"status":2}`, http.StatusConflict)
+	deleteJSON(t, handler, "/api/v1/todos/1", `{"version":2}`, http.StatusNoContent)
+
+	getJSON(t, handler, "/api/v1/todos/1", http.StatusNotFound)
+}
+
+func TestTodoValidation(t *testing.T) {
+	store := newMemoryStore()
+	handler := New(store, slog.Default(), Options{APIToken: "secret"})
+
+	postJSON(t, handler, "/api/v1/todos", `{"text":"","status":0}`, http.StatusBadRequest)
+	postJSON(t, handler, "/api/v1/todos", `{"text":"bad","status":3}`, http.StatusBadRequest)
+	postJSON(t, handler, "/api/v1/todos", `{"text":"123456789012345678901234567890123456789012345678901","status":0}`, http.StatusBadRequest)
+}
+
 func TestGetWeatherUsesProvider(t *testing.T) {
 	store := newMemoryStore()
 	store.weather = domain.Weather{Location: "stored", Condition: "stored"}
@@ -222,6 +310,36 @@ func postJSON(t *testing.T, handler http.Handler, path, body string, wantStatus 
 	t.Helper()
 
 	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader([]byte(body)))
+	req.Header.Set("Authorization", "Bearer secret")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != wantStatus {
+		t.Fatalf("%s status = %d, want %d; body=%s", path, rec.Code, wantStatus, rec.Body.String())
+	}
+	return rec
+}
+
+func patchJSON(t *testing.T, handler http.Handler, path, body string, wantStatus int) *httptest.ResponseRecorder {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodPatch, path, bytes.NewReader([]byte(body)))
+	req.Header.Set("Authorization", "Bearer secret")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != wantStatus {
+		t.Fatalf("%s status = %d, want %d; body=%s", path, rec.Code, wantStatus, rec.Body.String())
+	}
+	return rec
+}
+
+func deleteJSON(t *testing.T, handler http.Handler, path, body string, wantStatus int) *httptest.ResponseRecorder {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodDelete, path, bytes.NewReader([]byte(body)))
 	req.Header.Set("Authorization", "Bearer secret")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()

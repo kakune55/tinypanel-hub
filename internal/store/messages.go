@@ -17,6 +17,7 @@ func (s *FileStore) Snapshot() domain.Snapshot {
 	return domain.Snapshot{
 		Weather:   s.state.data.Weather,
 		Messages:  append([]domain.Message(nil), s.state.data.Messages...),
+		Todos:     append([]domain.Todo(nil), s.state.data.Todos...),
 		Telemetry: telemetry,
 	}
 }

@@ -61,6 +61,20 @@ type MessageSubscription struct {
 	MessageIDs  []int64 `json:"message_ids"`
 }
 
+type Todo struct {
+	ID        int64     `json:"id"`
+	Text      string    `json:"text"`
+	Status    int       `json:"status"`
+	Version   int64     `json:"version"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type TodoPatch struct {
+	Text   *string
+	Status *int
+}
+
 type Telemetry struct {
 	ID              int64                `json:"id"`
 	SchemaVersion   int                  `json:"schema_version"`
@@ -81,6 +95,7 @@ type Telemetry struct {
 type Snapshot struct {
 	Weather   Weather     `json:"weather"`
 	Messages  []Message   `json:"messages"`
+	Todos     []Todo      `json:"todos"`
 	Telemetry []Telemetry `json:"telemetry"`
 }
 

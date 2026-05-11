@@ -14,6 +14,11 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/messages/{id}", s.handleGetMessage)
 	s.mux.HandleFunc("POST /api/v1/messages/{id}/ack", s.handleAckMessage)
 	s.mux.HandleFunc("GET /api/v1/subscriptions/{channel}", s.handleGetSubscription)
+	s.mux.HandleFunc("GET /api/v1/todos", s.handleGetTodos)
+	s.mux.HandleFunc("POST /api/v1/todos", s.handlePostTodo)
+	s.mux.HandleFunc("GET /api/v1/todos/{id}", s.handleGetTodo)
+	s.mux.HandleFunc("PATCH /api/v1/todos/{id}", s.handlePatchTodo)
+	s.mux.HandleFunc("DELETE /api/v1/todos/{id}", s.handleDeleteTodo)
 	s.mux.HandleFunc("GET /api/v1/telemetry", s.handleGetTelemetry)
 	s.mux.HandleFunc("POST /api/v1/telemetry", s.handlePostTelemetry)
 }

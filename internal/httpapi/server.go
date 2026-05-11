@@ -25,6 +25,11 @@ type Store interface {
 	AddMessage(channel, author, body string) (domain.Message, error)
 	MessageSubscription(deviceID, channel string, limit int) domain.MessageSubscription
 	AckMessage(deviceID string, messageID int64) (bool, error)
+	Todos() []domain.Todo
+	Todo(id int64) (domain.Todo, bool)
+	AddTodo(text string, status int) (domain.Todo, error)
+	UpdateTodo(id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error)
+	DeleteTodo(id, version int64) (bool, bool, error)
 	Telemetry(limit int) []domain.Telemetry
 	AddTelemetry(domain.Telemetry) (domain.Telemetry, error)
 }
