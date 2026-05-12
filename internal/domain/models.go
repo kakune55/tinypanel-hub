@@ -108,7 +108,7 @@ type TelemetryBattery struct {
 	RawADC       int    `json:"raw_adc"`
 	RawVoltageMV int    `json:"raw_voltage_mv"`
 	VoltageMV    int    `json:"voltage_mv"`
-	Percentage   int    `json:"percentage"`
+	Percentage   float64 `json:"percentage"`
 	Status       string `json:"status"`
 }
 
