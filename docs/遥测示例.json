@@ -11,7 +11,7 @@
       "raw_adc": 1882,
       "raw_voltage_mv": 3950,
       "voltage_mv": 3950,
-      "percentage": 78,
+      "percentage": 78.1,
       "status": "discharging"
     },
     "usb_connected": false
