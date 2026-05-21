@@ -166,7 +166,7 @@ Invoke-RestMethod http://localhost:8080/api/v1/messages/1/ack -Method Post -Head
 
 ### TODO 列表
 
-详细协议见 [docs/todo.md](docs/todo.md)。
+详细协议见 [docs/todolist.md](docs/todolist.md)。
 
 ```http
 GET /api/v1/todos

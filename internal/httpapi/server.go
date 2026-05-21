@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"tinypanel-hub/internal/domain"
 )
 
@@ -37,7 +39,7 @@ type Store interface {
 type Server struct {
 	store    Store
 	logger   *slog.Logger
-	mux      *http.ServeMux
+	mux      chi.Router
 	apiToken string
 	weather  WeatherProvider
 }
@@ -46,7 +48,7 @@ func New(store Store, logger *slog.Logger, opts Options) http.Handler {
 	s := &Server{
 		store:    store,
 		logger:   logger,
-		mux:      http.NewServeMux(),
+		mux:      chi.NewRouter(),
 		apiToken: opts.APIToken,
 		weather:  opts.WeatherProvider,
 	}
@@ -55,12 +57,6 @@ func New(store Store, logger *slog.Logger, opts Options) http.Handler {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if isAPIRoute(r.URL.Path) && !s.authorized(r) {
-		w.Header().Set("WWW-Authenticate", `Bearer realm="tinypanel-hub"`)
-		writeError(w, http.StatusUnauthorized, "missing or invalid api token")
-		return
-	}
 	s.mux.ServeHTTP(w, r)
 }
 

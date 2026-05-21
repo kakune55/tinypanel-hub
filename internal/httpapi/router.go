@@ -1,30 +1,42 @@
 package httpapi
 
-import "net/http"
+import (
+	"net/http"
 
-const apiPrefix = "/api/v1/"
+	"github.com/go-chi/chi/v5"
+)
 
 func (s *Server) routes() {
-	s.mux.HandleFunc("GET /healthz", s.handleHealth)
+	s.mux.Use(noSniff)
 
-	s.mux.HandleFunc("GET /api/v1/snapshot", s.handleSnapshot)
-	s.mux.HandleFunc("GET /api/v1/weather", s.handleGetWeather)
-	s.mux.HandleFunc("GET /api/v1/messages", s.handleGetMessages)
-	s.mux.HandleFunc("POST /api/v1/messages", s.handlePostMessage)
-	s.mux.HandleFunc("GET /api/v1/messages/{id}", s.handleGetMessage)
-	s.mux.HandleFunc("POST /api/v1/messages/{id}/ack", s.handleAckMessage)
-	s.mux.HandleFunc("GET /api/v1/subscriptions/{channel}", s.handleGetSubscription)
-	s.mux.HandleFunc("GET /api/v1/todos", s.handleGetTodos)
-	s.mux.HandleFunc("POST /api/v1/todos", s.handlePostTodo)
-	s.mux.HandleFunc("GET /api/v1/todos/{id}", s.handleGetTodo)
-	s.mux.HandleFunc("PATCH /api/v1/todos/{id}", s.handlePatchTodo)
-	s.mux.HandleFunc("DELETE /api/v1/todos/{id}", s.handleDeleteTodo)
-	s.mux.HandleFunc("GET /api/v1/telemetry", s.handleGetTelemetry)
-	s.mux.HandleFunc("POST /api/v1/telemetry", s.handlePostTelemetry)
-}
+	s.mux.Get("/healthz", s.handleHealth)
 
-func isAPIRoute(path string) bool {
-	return len(path) >= len(apiPrefix) && path[:len(apiPrefix)] == apiPrefix
+	s.mux.Route("/api/v1", func(r chi.Router) {
+		r.Use(s.requireAuth)
+
+		r.Get("/snapshot", s.handleSnapshot)
+		r.Get("/weather", s.handleGetWeather)
+
+		r.Route("/messages", func(r chi.Router) {
+			r.Get("/", s.handleGetMessages)
+			r.Post("/", s.handlePostMessage)
+			r.Get("/{id}", s.handleGetMessage)
+			r.Post("/{id}/ack", s.handleAckMessage)
+		})
+
+		r.Get("/subscriptions/{channel}", s.handleGetSubscription)
+
+		r.Route("/todos", func(r chi.Router) {
+			r.Get("/", s.handleGetTodos)
+			r.Post("/", s.handlePostTodo)
+			r.Get("/{id}", s.handleGetTodo)
+			r.Patch("/{id}", s.handlePatchTodo)
+			r.Delete("/{id}", s.handleDeleteTodo)
+		})
+
+		r.Get("/telemetry", s.handleGetTelemetry)
+		r.Post("/telemetry", s.handlePostTelemetry)
+	})
 }
 
 var _ http.Handler = (*Server)(nil)
