@@ -168,6 +168,28 @@ func TestAPITokenRequired(t *testing.T) {
 	}
 }
 
+func TestWebFallbackDoesNotCatchAPI(t *testing.T) {
+	web := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("web ui"))
+	})
+	handler := New(newMemoryStore(), slog.Default(), Options{APIToken: "secret", WebHandler: web})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Body.String() != "web ui" {
+		t.Fatalf("unexpected web response: status=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/missing", nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound || strings.Contains(rec.Body.String(), "web ui") {
+		t.Fatalf("unexpected api missing response: status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestTelemetryUpload(t *testing.T) {
 	store := newMemoryStore()
 	handler := New(store, slog.Default(), Options{APIToken: "secret"})

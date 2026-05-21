@@ -12,6 +12,7 @@ import (
 type Options struct {
 	APIToken        string
 	WeatherProvider WeatherProvider
+	WebHandler      http.Handler
 }
 
 type WeatherProvider = service.WeatherProvider
@@ -22,6 +23,7 @@ type Server struct {
 	logger   *slog.Logger
 	mux      chi.Router
 	apiToken string
+	web      http.Handler
 }
 
 func New(store Store, logger *slog.Logger, opts Options) http.Handler {
@@ -30,6 +32,7 @@ func New(store Store, logger *slog.Logger, opts Options) http.Handler {
 		logger:   logger,
 		mux:      chi.NewRouter(),
 		apiToken: opts.APIToken,
+		web:      opts.WebHandler,
 	}
 	s.routes()
 	return s

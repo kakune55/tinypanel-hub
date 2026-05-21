@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tinypanel-hub</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      main {
+        width: min(520px, calc(100vw - 32px));
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        font-weight: 650;
+      }
+
+      p {
+        margin: 0;
+        color: color-mix(in srgb, CanvasText 72%, Canvas);
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>tinypanel-hub</h1>
+      <p>前端 UI 入口已预留。后续构建产物可以替换此目录，并由 Go 服务直接托管。</p>
+    </main>
+  </body>
+</html>

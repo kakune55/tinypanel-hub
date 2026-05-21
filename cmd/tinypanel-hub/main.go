@@ -18,6 +18,7 @@ import (
 	"tinypanel-hub/internal/httpapi"
 	"tinypanel-hub/internal/store"
 	weatherapi "tinypanel-hub/internal/weather"
+	"tinypanel-hub/internal/webui"
 )
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              cfg.Server.Addr,
-		Handler:           httpapi.New(dataStore, logger, httpapi.Options{APIToken: cfg.Server.APIToken, WeatherProvider: weatherProvider}),
+		Handler:           httpapi.New(dataStore, logger, httpapi.Options{APIToken: cfg.Server.APIToken, WeatherProvider: weatherProvider, WebHandler: webui.Handler()}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

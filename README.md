@@ -239,6 +239,9 @@ internal/httpapi/server.go      HTTP Server 类型和入口
 internal/httpapi/router.go      路由注册
 internal/httpapi/auth.go        Token 鉴权
 internal/httpapi/*.go           各资源 handler 和 HTTP 工具
+internal/service/*.go           薄服务层和业务能力边界
+internal/webui/                 嵌入式前端静态资源
+web/                            后续前端 UI 项目目录
 ```
 
 ## 验证

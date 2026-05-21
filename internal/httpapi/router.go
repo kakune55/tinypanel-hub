@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -44,6 +45,16 @@ func (s *Server) routes() {
 		r.Post("/telemetry", s.handlePostTelemetry)
 		r.Post("/telemetry/batch", s.handlePostTelemetryBatch)
 	})
+
+	s.mux.NotFound(s.handleNotFound)
 }
 
 var _ http.Handler = (*Server)(nil)
+
+func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/api/") || s.web == nil {
+		writeError(w, http.StatusNotFound, "not found")
+		return
+	}
+	s.web.ServeHTTP(w, r)
+}
