@@ -228,6 +228,7 @@ Invoke-RestMethod http://localhost:8080/api/v1/telemetry -Method Post -Headers $
 
 ```text
 cmd/tinypanel-hub/main.go       服务进程入口
+internal/app/app.go             应用依赖组装
 internal/config/config.go       JSON 配置加载
 internal/domain/models.go       领域数据结构
 internal/store/state.go         JSON 状态文件

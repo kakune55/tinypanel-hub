@@ -9,16 +9,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"tinypanel-hub"
+	"tinypanel-hub/internal/app"
 	"tinypanel-hub/internal/config"
-	"tinypanel-hub/internal/httpapi"
-	"tinypanel-hub/internal/store"
-	weatherapi "tinypanel-hub/internal/weather"
-	"tinypanel-hub/internal/webui"
 )
 
 func main() {
@@ -37,21 +33,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	dataStore, err := store.OpenFiles(cfg.Storage.DataFile, cfg.Storage.TelemetryFile)
+	handler, err := app.NewHandler(cfg, logger)
 	if err != nil {
-		logger.Error("open store", "err", err)
-		os.Exit(1)
-	}
-
-	weatherProvider, err := newWeatherProvider(cfg)
-	if err != nil {
-		logger.Error("configure weather provider", "err", err)
+		logger.Error("initialize app", "err", err)
 		os.Exit(1)
 	}
 
 	server := &http.Server{
 		Addr:              cfg.Server.Addr,
-		Handler:           httpapi.New(dataStore, logger, httpapi.Options{APIToken: cfg.Server.APIToken, WeatherProvider: weatherProvider, WebHandler: webui.Handler()}),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -108,39 +98,4 @@ func ensureEtc(logger *slog.Logger) error {
 	}
 	logger.Info("created example config", "path", examplePath)
 	return nil
-}
-
-func newWeatherProvider(cfg config.Config) (httpapi.WeatherProvider, error) {
-	provider := strings.ToLower(strings.TrimSpace(cfg.Weather.Provider))
-	if provider == "" || provider == "manual" || provider == "none" {
-		return nil, nil
-	}
-	if provider != "qweather" {
-		return nil, errors.New("unsupported weather provider " + cfg.Weather.Provider)
-	}
-
-	timeout, err := time.ParseDuration(cfg.Weather.Timeout)
-	if err != nil {
-		return nil, err
-	}
-	ttl, err := time.ParseDuration(cfg.Weather.CacheTTL)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := weatherapi.NewQWeatherClient(weatherapi.QWeatherOptions{
-		APIHost:     cfg.Weather.APIHost,
-		APIKey:      cfg.Weather.APIKey,
-		BearerToken: cfg.Weather.BearerToken,
-		Location:    cfg.Weather.Location,
-		Lang:        cfg.Weather.Lang,
-		Unit:        cfg.Weather.Unit,
-		Hours:       cfg.Weather.Hours,
-		Days:        cfg.Weather.Days,
-		HTTPClient:  &http.Client{Timeout: timeout},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return weatherapi.NewCache(client, ttl), nil
 }
