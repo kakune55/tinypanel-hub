@@ -1,7 +1,10 @@
 package store
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"math/big"
 	"sync"
 	"time"
 
@@ -13,7 +16,10 @@ const (
 	maxTelemetry = 500
 )
 
-var errEmptyStorePath = errors.New("store paths must not be empty")
+var (
+	errEmptyStorePath      = errors.New("store paths must not be empty")
+	errInvalidDeviceSecret = errors.New("invalid device secret")
+)
 
 type FileStore struct {
 	mu              sync.RWMutex
@@ -61,4 +67,24 @@ func nextTelemetryID(items []domain.Telemetry) int64 {
 		}
 	}
 	return next
+}
+
+func randomHex(bytesLen int) string {
+	b := make([]byte, bytesLen)
+	if _, err := rand.Read(b); err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(b)
+}
+
+func randomDigits(length int) string {
+	out := make([]byte, length)
+	for i := range out {
+		n, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			panic(err)
+		}
+		out[i] = byte('0' + n.Int64())
+	}
+	return string(out)
 }

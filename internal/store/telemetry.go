@@ -18,6 +18,37 @@ func (s *FileStore) Telemetry(limit int) []domain.Telemetry {
 	return items
 }
 
+func (s *FileStore) DeviceTelemetry(ownerID, deviceID string, limit int) []domain.Telemetry {
+	s.mu.RLock()
+	deviceOwner := ""
+	for _, device := range s.state.data.Devices {
+		if device.ID == deviceID {
+			deviceOwner = device.OwnerID
+			break
+		}
+	}
+	s.mu.RUnlock()
+	if deviceOwner != ownerID {
+		return nil
+	}
+
+	items, err := s.telemetry.loadRecent(maxTelemetry)
+	if err != nil {
+		return nil
+	}
+	filtered := make([]domain.Telemetry, 0, len(items))
+	for i := len(items) - 1; i >= 0; i-- {
+		if items[i].DeviceID != deviceID {
+			continue
+		}
+		filtered = append(filtered, items[i])
+		if limit > 0 && len(filtered) >= limit {
+			break
+		}
+	}
+	return filtered
+}
+
 func (s *FileStore) AddTelemetry(t domain.Telemetry) (domain.Telemetry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

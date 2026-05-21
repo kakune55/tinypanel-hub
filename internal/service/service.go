@@ -18,12 +18,27 @@ type WeatherStore interface {
 	Weather() domain.Weather
 }
 
+type UserStore interface {
+	UserByTokenHash(tokenHash string) (domain.User, bool)
+	User(id string) (domain.User, bool)
+	CreateUser(name, email, tokenHash string) (domain.User, error)
+}
+
+type DeviceStore interface {
+	DeviceByCredentials(deviceID, secretHash string) (domain.Device, bool)
+	Device(ownerID, deviceID string) (domain.Device, bool)
+	Devices(ownerID string) []domain.Device
+	HelloDevice(deviceID, secretHash string) (domain.DeviceHello, error)
+	BindDevice(ownerID, bindCode, name string) (domain.Device, bool, bool, error)
+	UpdateDevice(ownerID, deviceID, name string) (domain.Device, bool, error)
+	DeleteDevice(ownerID, deviceID string) (bool, error)
+}
+
 type MessageStore interface {
-	Messages(limit int) []domain.Message
-	Message(id int64) (domain.Message, bool)
-	AddMessage(channel, author, body string) (domain.Message, error)
-	MessageSubscription(deviceID, channel string, limit int) domain.MessageSubscription
-	AckMessage(deviceID string, messageID int64) (bool, error)
+	DeviceMessages(ownerID, deviceID string, limit int) []domain.Message
+	AddDeviceMessage(ownerID, deviceID, authorID, body, priority string) (domain.Message, error)
+	PendingDeviceMessages(deviceID string, limit int) []domain.Message
+	AckDeviceMessages(deviceID string, messageIDs []int64) ([]int64, []int64, error)
 }
 
 type TodoStore interface {
@@ -36,12 +51,15 @@ type TodoStore interface {
 
 type TelemetryStore interface {
 	Telemetry(limit int) []domain.Telemetry
+	DeviceTelemetry(ownerID, deviceID string, limit int) []domain.Telemetry
 	AddTelemetry(domain.Telemetry) (domain.Telemetry, error)
 }
 
 type Store interface {
 	SnapshotStore
 	WeatherStore
+	UserStore
+	DeviceStore
 	MessageStore
 	TodoStore
 	TelemetryStore
@@ -50,6 +68,8 @@ type Store interface {
 type Services struct {
 	Snapshot  SnapshotService
 	Weather   WeatherService
+	Users     UserService
+	Devices   DeviceService
 	Messages  MessageService
 	Todos     TodoService
 	Telemetry TelemetryService
@@ -59,6 +79,8 @@ func New(store Store, weather WeatherProvider) Services {
 	return Services{
 		Snapshot:  SnapshotService{store: store, weather: weather},
 		Weather:   WeatherService{store: store, weather: weather},
+		Users:     UserService{store: store},
+		Devices:   DeviceService{store: store},
 		Messages:  MessageService{store: store},
 		Todos:     TodoService{store: store},
 		Telemetry: TelemetryService{store: store},

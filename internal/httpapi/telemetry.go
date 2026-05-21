@@ -13,14 +13,22 @@ func (s *Server) handleGetTelemetry(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.services.Telemetry.List(limit))
 }
 
-func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetDeviceTelemetry(w http.ResponseWriter, r *http.Request) {
+	user, _ := currentUser(r)
+	deviceID := pathString(r, "device_id")
+	limit := queryInt(r, "limit", 50, 1, 500)
+	writeJSON(w, http.StatusOK, s.services.Telemetry.DeviceList(user.ID, deviceID, limit))
+}
+
+func (s *Server) handleDeviceTelemetry(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
 	var req domain.Telemetry
 	if err := readJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := normalizeTelemetry(r, &req); err != nil {
+	if err := normalizeTelemetry(&req, device.ID); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -33,7 +41,8 @@ func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, item)
 }
 
-func (s *Server) handlePostTelemetryBatch(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleDeviceTelemetryBatch(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
 	var req struct {
 		Items []domain.Telemetry `json:"items"`
 	}
@@ -50,7 +59,7 @@ func (s *Server) handlePostTelemetryBatch(w http.ResponseWriter, r *http.Request
 		return
 	}
 	for i := range req.Items {
-		if err := normalizeTelemetry(r, &req.Items[i]); err != nil {
+		if err := normalizeTelemetry(&req.Items[i], device.ID); err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -67,8 +76,8 @@ func (s *Server) handlePostTelemetryBatch(w http.ResponseWriter, r *http.Request
 	})
 }
 
-func normalizeTelemetry(r *http.Request, item *domain.Telemetry) error {
-	item.DeviceID = requestDeviceID(r, item.DeviceID)
+func normalizeTelemetry(item *domain.Telemetry, deviceID string) error {
+	item.DeviceID = deviceID
 	item.BootID = strings.TrimSpace(item.BootID)
 	item.Power.Battery.Status = strings.TrimSpace(item.Power.Battery.Status)
 	item.Network.SSID = strings.TrimSpace(item.Network.SSID)

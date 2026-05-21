@@ -21,6 +21,20 @@ func (s *Server) handleSnapshot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, snapshot)
 }
 
+func (s *Server) handleDeviceSnapshot(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
+	weather, err := s.services.Weather.Get(r.Context())
+	if err != nil {
+		s.logger.Error("weather provider error", "err", err)
+		writeError(w, http.StatusBadGateway, "weather provider error")
+		return
+	}
+	writeJSON(w, http.StatusOK, domain.Snapshot{
+		Weather:  weather,
+		Messages: s.services.Messages.Pending(device.ID, 20),
+	})
+}
+
 func snapshotInclude(r *http.Request) map[string]bool {
 	raw := strings.TrimSpace(r.URL.Query().Get("include"))
 	if raw == "" {

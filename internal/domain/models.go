@@ -47,18 +47,15 @@ type WeatherDailyForecast struct {
 }
 
 type Message struct {
-	ID        int64     `json:"id"`
-	Channel   string    `json:"channel"`
-	Author    string    `json:"author"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-type MessageSubscription struct {
-	DeviceID    string  `json:"device_id"`
-	Channel     string  `json:"channel"`
-	UnreadCount int     `json:"unread_count"`
-	MessageIDs  []int64 `json:"message_ids"`
+	ID        int64      `json:"id"`
+	OwnerID   string     `json:"owner_id"`
+	DeviceID  string     `json:"device_id"`
+	AuthorID  string     `json:"author_id"`
+	Body      string     `json:"body"`
+	Priority  string     `json:"priority"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	AckedAt   *time.Time `json:"acked_at,omitempty"`
 }
 
 type Todo struct {
@@ -99,17 +96,55 @@ type Snapshot struct {
 	Telemetry []Telemetry `json:"telemetry"`
 }
 
+const (
+	MessagePriorityNormal = "normal"
+	MessagePriorityHigh   = "high"
+	MessageStatusPending  = "pending"
+	MessageStatusAcked    = "acked"
+)
+
+type User struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	APITokenHash string    `json:"api_token_hash,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type Device struct {
+	ID                string     `json:"id"`
+	OwnerID           string     `json:"owner_id,omitempty"`
+	Name              string     `json:"name"`
+	SecretHash        string     `json:"secret_hash,omitempty"`
+	BindCode          string     `json:"bind_code,omitempty"`
+	BindCodeExpiresAt *time.Time `json:"bind_code_expires_at,omitempty"`
+	BoundAt           *time.Time `json:"bound_at,omitempty"`
+	LastSeenAt        *time.Time `json:"last_seen_at,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+}
+
+type DeviceHello struct {
+	DeviceID     string     `json:"device_id"`
+	DeviceSecret string     `json:"device_secret,omitempty"`
+	Bound        bool       `json:"bound"`
+	Name         string     `json:"name,omitempty"`
+	BindCode     string     `json:"bind_code,omitempty"`
+	BindCodeTTL  int        `json:"bind_code_ttl,omitempty"`
+	ServerTime   time.Time  `json:"server_time"`
+	BoundAt      *time.Time `json:"bound_at,omitempty"`
+}
+
 type TelemetryPower struct {
 	Battery      TelemetryBattery `json:"battery"`
 	USBConnected bool             `json:"usb_connected"`
 }
 
 type TelemetryBattery struct {
-	RawADC       int    `json:"raw_adc"`
-	RawVoltageMV int    `json:"raw_voltage_mv"`
-	VoltageMV    int    `json:"voltage_mv"`
+	RawADC       int     `json:"raw_adc"`
+	RawVoltageMV int     `json:"raw_voltage_mv"`
+	VoltageMV    int     `json:"voltage_mv"`
 	Percentage   float64 `json:"percentage"`
-	Status       string `json:"status"`
+	Status       string  `json:"status"`
 }
 
 type TelemetryEnvironment struct {

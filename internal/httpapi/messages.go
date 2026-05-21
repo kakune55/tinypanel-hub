@@ -3,41 +3,52 @@ package httpapi
 import (
 	"net/http"
 	"strings"
+
+	"tinypanel-hub/internal/domain"
 )
 
-const defaultMessageChannel = "default"
-
-func (s *Server) handleGetMessages(w http.ResponseWriter, r *http.Request) {
-	limit := queryInt(r, "limit", 20, 1, 100)
-	writeJSON(w, http.StatusOK, s.services.Messages.List(limit))
+func (s *Server) handleListDeviceMessages(w http.ResponseWriter, r *http.Request) {
+	user, _ := currentUser(r)
+	deviceID := pathString(r, "device_id")
+	if _, ok := s.services.Devices.Get(user.ID, deviceID); !ok {
+		writeError(w, http.StatusNotFound, "device not found")
+		return
+	}
+	limit := queryInt(r, "limit", 50, 1, 100)
+	writeJSON(w, http.StatusOK, s.services.Messages.DeviceMessages(user.ID, deviceID, limit))
 }
 
-func (s *Server) handlePostMessage(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleCreateDeviceMessage(w http.ResponseWriter, r *http.Request) {
+	user, _ := currentUser(r)
+	deviceID := pathString(r, "device_id")
+	if _, ok := s.services.Devices.Get(user.ID, deviceID); !ok {
+		writeError(w, http.StatusNotFound, "device not found")
+		return
+	}
+
 	var req struct {
-		Channel string `json:"channel"`
-		Author  string `json:"author"`
-		Body    string `json:"body"`
+		Body     string `json:"body"`
+		Priority string `json:"priority"`
 	}
 	if err := readJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	req.Channel = strings.TrimSpace(req.Channel)
-	req.Author = strings.TrimSpace(req.Author)
 	req.Body = strings.TrimSpace(req.Body)
-	if req.Channel == "" {
-		req.Channel = defaultMessageChannel
-	}
-	if req.Author == "" {
-		req.Author = "anonymous"
-	}
+	req.Priority = strings.TrimSpace(req.Priority)
 	if req.Body == "" {
 		writeError(w, http.StatusBadRequest, "body is required")
 		return
 	}
+	if req.Priority == "" {
+		req.Priority = domain.MessagePriorityNormal
+	}
+	if req.Priority != domain.MessagePriorityNormal && req.Priority != domain.MessagePriorityHigh {
+		writeError(w, http.StatusBadRequest, "priority must be normal or high")
+		return
+	}
 
-	msg, err := s.services.Messages.Create(req.Channel, req.Author, req.Body)
+	msg, err := s.services.Messages.Create(user.ID, deviceID, user.ID, req.Body, req.Priority)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return
@@ -45,70 +56,22 @@ func (s *Server) handlePostMessage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, msg)
 }
 
-func (s *Server) handleGetMessage(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r, "id")
-	if !ok {
-		return
-	}
-
-	msg, found := s.services.Messages.Get(id)
-	if !found {
-		writeError(w, http.StatusNotFound, "message not found")
-		return
-	}
-	writeJSON(w, http.StatusOK, msg)
-}
-
-func (s *Server) handleAckMessage(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r, "id")
-	if !ok {
-		return
-	}
-
-	var req struct {
-		DeviceID string `json:"device_id"`
-	}
-	if err := readJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	req.DeviceID = requestDeviceID(r, req.DeviceID)
-	if req.DeviceID == "" {
-		writeError(w, http.StatusBadRequest, "device_id is required")
-		return
-	}
-
-	found, err := s.services.Messages.Ack(req.DeviceID, id)
-	if err != nil {
-		s.writeStoreError(w, err)
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, "message not found")
-		return
-	}
-
+func (s *Server) handleDeviceMessages(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
+	limit := queryInt(r, "limit", 10, 1, 100)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"device_id":  req.DeviceID,
-		"message_id": id,
-		"acked":      true,
+		"device_id": device.ID,
+		"messages":  s.services.Messages.Pending(device.ID, limit),
 	})
 }
 
-func (s *Server) handleAckMessages(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleDeviceAckMessages(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
 	var req struct {
-		DeviceID   string  `json:"device_id"`
 		MessageIDs []int64 `json:"message_ids"`
 	}
 	if err := readJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	req.DeviceID = requestDeviceID(r, req.DeviceID)
-	if req.DeviceID == "" {
-		writeError(w, http.StatusBadRequest, "device_id is required")
 		return
 	}
 	if len(req.MessageIDs) == 0 {
@@ -126,7 +89,7 @@ func (s *Server) handleAckMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result, err := s.services.Messages.AckBatch(req.DeviceID, req.MessageIDs)
+	result, err := s.services.Messages.AckBatch(device.ID, req.MessageIDs)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return

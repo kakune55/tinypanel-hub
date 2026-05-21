@@ -28,132 +28,95 @@ func (s *FileStore) Weather() domain.Weather {
 	return s.state.data.Weather
 }
 
-func (s *FileStore) Messages(limit int) []domain.Message {
+func (s *FileStore) DeviceMessages(ownerID, deviceID string, limit int) []domain.Message {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	items := s.state.data.Messages
-	if limit <= 0 || limit > len(items) {
-		limit = len(items)
+	var out []domain.Message
+	for i := len(s.state.data.Messages) - 1; i >= 0; i-- {
+		msg := s.state.data.Messages[i]
+		if msg.OwnerID != ownerID || msg.DeviceID != deviceID {
+			continue
+		}
+		out = append(out, msg)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
 	}
-
-	start := len(items) - limit
-	out := append([]domain.Message(nil), items[start:]...)
-	reverseMessages(out)
 	return out
 }
 
-func (s *FileStore) Message(id int64) (domain.Message, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	for _, msg := range s.state.data.Messages {
-		if msg.ID == id {
-			return msg, true
-		}
-	}
-	return domain.Message{}, false
-}
-
-func (s *FileStore) AddMessage(channel, author, body string) (domain.Message, error) {
+func (s *FileStore) AddDeviceMessage(ownerID, deviceID, authorID, body, priority string) (domain.Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if priority == "" {
+		priority = domain.MessagePriorityNormal
+	}
 	msg := domain.Message{
 		ID:        s.state.data.NextMessageID,
-		Channel:   channel,
-		Author:    author,
+		OwnerID:   ownerID,
+		DeviceID:  deviceID,
+		AuthorID:  authorID,
 		Body:      body,
+		Priority:  priority,
+		Status:    domain.MessageStatusPending,
 		CreatedAt: time.Now().UTC(),
 	}
 	s.state.data.NextMessageID++
 	s.state.data.Messages = append(s.state.data.Messages, msg)
 	if len(s.state.data.Messages) > maxMessages {
 		s.state.data.Messages = s.state.data.Messages[len(s.state.data.Messages)-maxMessages:]
-		s.pruneMessageAcks()
 	}
 	return msg, s.state.save()
 }
 
-func (s *FileStore) MessageSubscription(deviceID, channel string, limit int) domain.MessageSubscription {
+func (s *FileStore) PendingDeviceMessages(deviceID string, limit int) []domain.Message {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	acked := make(map[int64]bool)
-	for _, id := range s.state.data.MessageAcks[deviceID] {
-		acked[id] = true
-	}
-
-	sub := domain.MessageSubscription{
-		DeviceID:   deviceID,
-		Channel:    channel,
-		MessageIDs: []int64{},
-	}
-
+	var out []domain.Message
 	for _, msg := range s.state.data.Messages {
-		if msg.Channel != channel || acked[msg.ID] {
+		if msg.DeviceID != deviceID || msg.Status != domain.MessageStatusPending {
 			continue
 		}
-		sub.UnreadCount++
-		if limit <= 0 || len(sub.MessageIDs) < limit {
-			sub.MessageIDs = append(sub.MessageIDs, msg.ID)
+		out = append(out, msg)
+		if limit > 0 && len(out) >= limit {
+			break
 		}
 	}
-
-	return sub
+	return out
 }
 
-func (s *FileStore) AckMessage(deviceID string, messageID int64) (bool, error) {
+func (s *FileStore) AckDeviceMessages(deviceID string, messageIDs []int64) ([]int64, []int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.messageExists(messageID) {
-		return false, nil
-	}
-	if s.state.data.MessageAcks == nil {
-		s.state.data.MessageAcks = map[string][]int64{}
-	}
-	for _, id := range s.state.data.MessageAcks[deviceID] {
-		if id == messageID {
-			return true, nil
-		}
+	now := time.Now().UTC()
+	want := make(map[int64]bool, len(messageIDs))
+	for _, id := range messageIDs {
+		want[id] = true
 	}
 
-	s.state.data.MessageAcks[deviceID] = append(s.state.data.MessageAcks[deviceID], messageID)
-	return true, s.state.save()
-}
-
-func (s *FileStore) messageExists(id int64) bool {
-	for _, msg := range s.state.data.Messages {
-		if msg.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *FileStore) pruneMessageAcks() {
-	existing := make(map[int64]bool, len(s.state.data.Messages))
-	for _, msg := range s.state.data.Messages {
-		existing[msg.ID] = true
-	}
-	for deviceID, ids := range s.state.data.MessageAcks {
-		kept := ids[:0]
-		for _, id := range ids {
-			if existing[id] {
-				kept = append(kept, id)
-			}
-		}
-		if len(kept) == 0 {
-			delete(s.state.data.MessageAcks, deviceID)
+	var acked []int64
+	for i := range s.state.data.Messages {
+		msg := &s.state.data.Messages[i]
+		if msg.DeviceID != deviceID || !want[msg.ID] {
 			continue
 		}
-		s.state.data.MessageAcks[deviceID] = kept
+		if msg.Status != domain.MessageStatusAcked {
+			msg.Status = domain.MessageStatusAcked
+			msg.AckedAt = &now
+		}
+		acked = append(acked, msg.ID)
+		delete(want, msg.ID)
 	}
-}
 
-func reverseMessages(items []domain.Message) {
-	for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
-		items[i], items[j] = items[j], items[i]
+	missing := make([]int64, 0, len(want))
+	for _, id := range messageIDs {
+		if want[id] {
+			missing = append(missing, id)
+		}
 	}
+	return acked, missing, s.state.save()
 }

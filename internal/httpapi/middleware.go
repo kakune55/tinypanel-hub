@@ -15,14 +15,47 @@ func noSniff(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) requireAuth(next http.Handler) http.Handler {
+func (s *Server) requireAdminAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !s.authorized(r) {
+		if !s.adminAuthorized(r) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="tinypanel-hub"`)
 			writeError(w, http.StatusUnauthorized, "missing or invalid api token")
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) requireUserAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := bearerToken(r.Header.Get("Authorization"))
+		if token == "" {
+			writeError(w, http.StatusUnauthorized, "missing or invalid user token")
+			return
+		}
+		user, ok := s.services.Users.ByTokenHash(tokenHash(token))
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "missing or invalid user token")
+			return
+		}
+		next.ServeHTTP(w, withUser(r, user))
+	})
+}
+
+func (s *Server) requireDeviceAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deviceID := r.Header.Get("X-Device-ID")
+		secret := r.Header.Get("X-Device-Secret")
+		if deviceID == "" || secret == "" {
+			writeError(w, http.StatusUnauthorized, "missing or invalid device credentials")
+			return
+		}
+		device, ok := s.services.Devices.ByCredentials(deviceID, tokenHash(secret))
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "missing or invalid device credentials")
+			return
+		}
+		next.ServeHTTP(w, withDevice(r, device))
 	})
 }
 

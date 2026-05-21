@@ -53,7 +53,7 @@ func TestTelemetryUsesJSONL(t *testing.T) {
 	}
 }
 
-func TestMessagesStayInStateFile(t *testing.T) {
+func TestDeviceBindingAndMessagesPersist(t *testing.T) {
 	dir := t.TempDir()
 	statePath := filepath.Join(dir, "state.json")
 	telemetryPath := filepath.Join(dir, "telemetry.jsonl")
@@ -62,31 +62,53 @@ func TestMessagesStayInStateFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg, err := s.AddMessage("desk", "hub", "hello")
+	user, err := s.CreateUser("Alice", "alice@example.com", "user-token-hash")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if msg.ID != 1 {
-		t.Fatalf("message id = %d, want 1", msg.ID)
+	hello, err := s.HelloDevice("tinypanel-001", "device-secret-hash")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if ok, err := s.AckMessage("tinypanel-001", msg.ID); err != nil || !ok {
-		t.Fatalf("ack ok=%v err=%v", ok, err)
+	if hello.Bound || hello.BindCode == "" {
+		t.Fatalf("hello = %+v", hello)
+	}
+	device, found, bound, err := s.BindDevice(user.ID, hello.BindCode, "书桌屏幕")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found || !bound || device.OwnerID != user.ID {
+		t.Fatalf("bind device=%+v found=%v bound=%v", device, found, bound)
 	}
 
+	msg, err := s.AddDeviceMessage(user.ID, device.ID, user.ID, "hello", domain.MessagePriorityNormal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acked, missing, err := s.AckDeviceMessages(device.ID, []int64{msg.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(acked) != 1 || len(missing) != 0 {
+		t.Fatalf("acked=%v missing=%v", acked, missing)
+	}
 	reopened, err := OpenFiles(statePath, telemetryPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := reopened.Message(msg.ID); !ok {
-		t.Fatalf("message not persisted")
+	if _, ok := reopened.UserByTokenHash("user-token-hash"); !ok {
+		t.Fatalf("user not persisted")
 	}
-	sub := reopened.MessageSubscription("tinypanel-001", "desk", 10)
-	if sub.UnreadCount != 0 {
-		t.Fatalf("subscription after ack = %+v", sub)
+	if _, ok := reopened.Device(user.ID, device.ID); !ok {
+		t.Fatalf("device not persisted")
+	}
+	pending := reopened.PendingDeviceMessages(device.ID, 10)
+	if len(pending) != 0 {
+		t.Fatalf("pending after ack = %+v", pending)
 	}
 }
 
-func TestMessageAcksPrunedWhenMessagesRotate(t *testing.T) {
+func TestUserDeviceIsolation(t *testing.T) {
 	dir := t.TempDir()
 	statePath := filepath.Join(dir, "state.json")
 	telemetryPath := filepath.Join(dir, "telemetry.jsonl")
@@ -95,28 +117,33 @@ func TestMessageAcksPrunedWhenMessagesRotate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.AddMessage("desk", "hub", "old")
+	alice, err := s.CreateUser("Alice", "alice@example.com", "alice-hash")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok, err := s.AckMessage("tinypanel-001", first.ID); err != nil || !ok {
-		t.Fatalf("ack ok=%v err=%v", ok, err)
-	}
-	for i := 0; i < maxMessages; i++ {
-		if _, err := s.AddMessage("desk", "hub", "new"); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	reopened, err := OpenFiles(statePath, telemetryPath)
+	bob, err := s.CreateUser("Bob", "bob@example.com", "bob-hash")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := reopened.Message(first.ID); ok {
-		t.Fatalf("first message should have rotated out")
+	hello, err := s.HelloDevice("tinypanel-001", "device-secret-hash")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if ids := reopened.state.data.MessageAcks["tinypanel-001"]; len(ids) != 0 {
-		t.Fatalf("stale ack ids = %v", ids)
+	device, _, bound, err := s.BindDevice(alice.ID, hello.BindCode, "书桌屏幕")
+	if err != nil || !bound {
+		t.Fatalf("bind device=%+v bound=%v err=%v", device, bound, err)
+	}
+	if devices := s.Devices(bob.ID); len(devices) != 0 {
+		t.Fatalf("bob devices = %+v", devices)
+	}
+	if _, ok := s.Device(bob.ID, device.ID); ok {
+		t.Fatalf("bob should not access alice device")
+	}
+	if _, err := s.AddDeviceMessage(alice.ID, device.ID, alice.ID, "hello", domain.MessagePriorityNormal); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.DeviceMessages(bob.ID, device.ID, 10); len(got) != 0 {
+		t.Fatalf("bob messages = %+v", got)
 	}
 }
 
