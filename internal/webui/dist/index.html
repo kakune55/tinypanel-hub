@@ -1,828 +1,783 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>tinypanel-hub</title>
-    <style>
-      :root {
-        color-scheme: light;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        --bg: #f6f6f2;
-        --panel: #ffffff;
-        --panel-soft: #f0f1ed;
-        --ink: #151612;
-        --muted: #72756c;
-        --line: #dedfd7;
-        --accent: #0f7b5f;
-        --accent-ink: #ffffff;
-        --danger: #b4473d;
-        --radius: 8px;
-        --shadow: 0 18px 48px rgba(20, 24, 18, .08);
-      }
 
-      * {
-        box-sizing: border-box;
-      }
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tinypanel-hub</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #f6f6f2;
+      --panel: #ffffff;
+      --panel-soft: #f0f1ed;
+      --ink: #151612;
+      --muted: #72756c;
+      --line: #dedfd7;
+      --accent: #0f7b5f;
+      --accent-ink: #ffffff;
+      --danger: #b4473d;
+      --radius: 8px;
+      --shadow: 0 18px 48px rgba(20, 24, 18, .08);
+    }
 
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background: var(--bg);
-        color: var(--ink);
-      }
+    * {
+      box-sizing: border-box;
+    }
 
-      button,
-      input,
-      textarea,
-      select {
-        font: inherit;
-      }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
 
-      button {
-        border: 0;
-        border-radius: 999px;
-        min-height: 38px;
-        padding: 0 16px;
-        background: var(--ink);
-        color: white;
-        cursor: pointer;
-        transition: transform .12s ease, opacity .12s ease, background .12s ease;
-      }
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
 
-      button:hover {
-        transform: translateY(-1px);
-      }
+    button {
+      border: 0;
+      border-radius: 999px;
+      min-height: 38px;
+      padding: 0 16px;
+      background: var(--ink);
+      color: white;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+    }
 
-      button:disabled {
-        cursor: not-allowed;
-        opacity: .5;
-        transform: none;
-      }
+    button:hover {
+      transform: translateY(-1px);
+    }
 
-      button.secondary {
-        background: var(--panel-soft);
-        color: var(--ink);
-      }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .5;
+      transform: none;
+    }
 
-      button.accent {
-        background: var(--accent);
-        color: var(--accent-ink);
-      }
+    button.secondary {
+      background: var(--panel-soft);
+      color: var(--ink);
+    }
 
-      button.danger {
-        background: rgba(180, 71, 61, .1);
-        color: var(--danger);
-      }
+    button.accent {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
 
-      input,
-      textarea,
-      select {
-        width: 100%;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--panel);
-        color: var(--ink);
-        min-height: 40px;
-        padding: 10px 12px;
-        outline: none;
-      }
+    button.danger {
+      background: rgba(180, 71, 61, .1);
+      color: var(--danger);
+    }
 
-      textarea {
-        min-height: 84px;
-        resize: vertical;
-      }
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--ink);
+      min-height: 40px;
+      padding: 10px 12px;
+      outline: none;
+    }
 
-      input:focus,
-      textarea:focus,
-      select:focus {
-        border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
-        box-shadow: 0 0 0 3px rgba(15, 123, 95, .12);
-      }
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
 
-      .shell {
-        display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
-        min-height: 100vh;
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+      box-shadow: 0 0 0 3px rgba(15, 123, 95, .12);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 24px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, .74);
+      backdrop-filter: blur(24px);
+    }
+
+    main {
+      padding: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .status-dot.ok {
+      background: var(--accent);
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 24px;
+    }
+
+    .section-title h2,
+    .section-title h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .hero-main {
+      min-height: 260px;
+      display: grid;
+      align-content: space-between;
+      gap: 24px;
+      padding: 26px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .56)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'%3E%3Crect width='900' height='520' fill='%23e8ebe1'/%3E%3Cpath d='M80 390 C220 280 290 310 410 190 C520 82 660 120 820 48 L900 0 L900 520 L0 520 Z' fill='%23d7ddd1'/%3E%3Cpath d='M0 120 C180 150 280 80 440 118 C610 158 700 90 900 130 L900 0 L0 0 Z' fill='%23f7f8f4'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .72);
+      border: 1px solid rgba(0, 0, 0, .08);
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 88px;
+      display: grid;
+      align-content: space-between;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .metric strong {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 22px 0 16px;
+    }
+
+    .tabs button {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .tabs button.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: white;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: var(--panel);
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .item-title {
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .notice {
+      min-height: 38px;
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .notice.error {
+      background: rgba(180, 71, 61, .1);
+      color: var(--danger);
+    }
+
+    .notice.ok {
+      background: rgba(15, 123, 95, .1);
+      color: var(--accent);
+    }
+
+    pre {
+      margin: 0;
+      max-height: 320px;
+      overflow: auto;
+      border-radius: var(--radius);
+      background: #151612;
+      color: #f7f7f2;
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+
+      .shell,
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
       }
 
       aside {
-        position: sticky;
-        top: 0;
-        height: 100vh;
-        overflow: auto;
-        padding: 24px;
-        border-right: 1px solid var(--line);
-        background: rgba(255, 255, 255, .74);
-        backdrop-filter: blur(24px);
+        position: static;
+        height: auto;
       }
 
       main {
-        padding: 28px;
+        padding: 18px;
       }
+    }
 
-      .brand {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 28px;
-      }
+    @media (max-width: 640px) {
 
-      .brand h1 {
-        margin: 0;
-        font-size: 22px;
-        letter-spacing: 0;
-      }
-
-      .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--muted);
-      }
-
-      .status-dot.ok {
-        background: var(--accent);
-      }
-
-      .stack {
-        display: grid;
-        gap: 16px;
-      }
-
-      .section {
-        display: grid;
-        gap: 10px;
-      }
-
-      .section-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        min-height: 24px;
-      }
-
-      .section-title h2,
-      .section-title h3 {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: .08em;
-      }
-
-      .panel {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 16px;
-      }
-
-      .form-grid {
-        display: grid;
-        gap: 10px;
-      }
-
-      .two {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
-        gap: 18px;
-        align-items: stretch;
-        margin-bottom: 20px;
+      .two,
+      .metric-grid {
+        grid-template-columns: 1fr;
       }
 
       .hero-main {
-        min-height: 260px;
-        display: grid;
-        align-content: space-between;
-        gap: 24px;
-        padding: 26px;
-        border-radius: var(--radius);
-        background:
-          linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.56)),
-          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'%3E%3Crect width='900' height='520' fill='%23e8ebe1'/%3E%3Cpath d='M80 390 C220 280 290 310 410 190 C520 82 660 120 820 48 L900 0 L900 520 L0 520 Z' fill='%23d7ddd1'/%3E%3Cpath d='M0 120 C180 150 280 80 440 118 C610 158 700 90 900 130 L900 0 L0 0 Z' fill='%23f7f8f4'/%3E%3C/svg%3E");
-        background-size: cover;
-        background-position: center;
-        border: 1px solid var(--line);
+        min-height: 220px;
       }
+    }
+  </style>
+</head>
 
-      .eyebrow {
-        margin: 0 0 8px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-      }
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <h1>tinypanel-hub</h1>
+        <span id="healthDot" class="status-dot" title="health"></span>
+      </div>
 
-      .hero h2 {
-        margin: 0;
-        font-size: clamp(30px, 5vw, 58px);
-        line-height: 1;
-        letter-spacing: 0;
-      }
-
-      .hero-meta {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        min-height: 28px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: rgba(255,255,255,.72);
-        border: 1px solid rgba(0,0,0,.08);
-        color: var(--ink);
-        font-size: 13px;
-      }
-
-      .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .metric {
-        min-height: 88px;
-        display: grid;
-        align-content: space-between;
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        padding: 14px;
-      }
-
-      .metric strong {
-        font-size: 26px;
-        line-height: 1;
-      }
-
-      .metric span {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .tabs {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin: 22px 0 16px;
-      }
-
-      .tabs button {
-        background: transparent;
-        color: var(--muted);
-        border: 1px solid var(--line);
-      }
-
-      .tabs button.active {
-        background: var(--ink);
-        border-color: var(--ink);
-        color: white;
-      }
-
-      .tab-panel {
-        display: none;
-      }
-
-      .tab-panel.active {
-        display: grid;
-        gap: 16px;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      .list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .item {
-        display: grid;
-        gap: 8px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        padding: 12px;
-        background: var(--panel);
-      }
-
-      .item-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .item-title {
-        font-weight: 700;
-        overflow-wrap: anywhere;
-      }
-
-      .muted {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .mono {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      }
-
-      .notice {
-        min-height: 38px;
-        border-radius: var(--radius);
-        padding: 10px 12px;
-        background: var(--panel-soft);
-        color: var(--muted);
-        font-size: 13px;
-        overflow-wrap: anywhere;
-      }
-
-      .notice.error {
-        background: rgba(180, 71, 61, .1);
-        color: var(--danger);
-      }
-
-      .notice.ok {
-        background: rgba(15, 123, 95, .1);
-        color: var(--accent);
-      }
-
-      pre {
-        margin: 0;
-        max-height: 320px;
-        overflow: auto;
-        border-radius: var(--radius);
-        background: #151612;
-        color: #f7f7f2;
-        padding: 14px;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .empty {
-        border: 1px dashed var(--line);
-        border-radius: var(--radius);
-        padding: 20px;
-        color: var(--muted);
-        text-align: center;
-      }
-
-      @media (max-width: 980px) {
-        .shell,
-        .hero,
-        .grid {
-          grid-template-columns: 1fr;
-        }
-
-        aside {
-          position: static;
-          height: auto;
-        }
-
-        main {
-          padding: 18px;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .two,
-        .metric-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .hero-main {
-          min-height: 220px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="shell">
-      <aside>
-        <div class="brand">
-          <h1>tinypanel-hub</h1>
-          <span id="healthDot" class="status-dot" title="health"></span>
-        </div>
-
-        <div class="stack">
-          <section class="section">
-            <div class="section-title"><h2>身份</h2></div>
-            <div class="panel form-grid">
-              <input id="adminToken" placeholder="Admin Token">
-              <div class="two">
-                <input id="newUserName" placeholder="用户名" value="Alice">
-                <input id="newUserEmail" placeholder="邮箱">
-              </div>
-              <input id="newUserToken" placeholder="用户 Token，可留空自动生成">
-              <button class="accent" id="createUserBtn">创建用户</button>
-              <input id="userToken" placeholder="当前用户 Token">
-              <div class="actions">
-                <button id="saveTokensBtn">保存</button>
-                <button class="secondary" id="loadMeBtn">读取用户</button>
-              </div>
-              <div id="identityNotice" class="notice">保存 token 后即可使用用户侧功能。</div>
-            </div>
-          </section>
-
-          <section class="section">
-            <div class="section-title"><h2>设备模拟</h2></div>
-            <div class="panel form-grid">
-              <input id="simDeviceID" placeholder="X-Device-ID" value="tinypanel-001">
-              <input id="simDeviceSecret" placeholder="X-Device-Secret">
-              <button id="deviceHelloBtn">设备 Hello</button>
-              <div class="two">
-                <input id="bindCode" placeholder="绑定码">
-                <input id="bindName" placeholder="设备名称" value="书桌屏幕">
-              </div>
-              <button class="accent" id="bindDeviceBtn">绑定到当前用户</button>
-              <div id="deviceNotice" class="notice">首次 Hello 会返回设备 secret 和绑定码。</div>
-            </div>
-          </section>
-        </div>
-      </aside>
-
-      <main>
-        <section class="hero">
-          <div class="hero-main">
-            <div>
-              <p class="eyebrow">Device Center</p>
-              <h2 id="heroTitle">未选择设备</h2>
-            </div>
-            <div class="hero-meta">
-              <span class="pill mono" id="heroDeviceID">device: -</span>
-              <span class="pill" id="heroBound">未绑定</span>
-              <span class="pill" id="heroUser">user: -</span>
-            </div>
+      <div class="stack">
+        <section class="section">
+          <div class="section-title">
+            <h2>身份</h2>
           </div>
-          <div class="metric-grid">
-            <div class="metric"><span>设备</span><strong id="metricDevices">0</strong></div>
-            <div class="metric"><span>待确认消息</span><strong id="metricPending">0</strong></div>
-            <div class="metric"><span>TODO</span><strong id="metricTodos">0</strong></div>
+          <div class="panel form-grid">
+            <input id="adminToken" placeholder="Admin Token">
+            <div class="two">
+              <input id="newUserName" placeholder="用户名" value="Alice">
+              <input id="newUserEmail" placeholder="邮箱">
+            </div>
+            <input id="newUserToken" placeholder="用户 Token，可留空自动生成">
+            <button class="accent" id="createUserBtn">创建用户</button>
+            <input id="userToken" placeholder="当前用户 Token">
+            <div class="actions">
+              <button id="saveTokensBtn">保存</button>
+              <button class="secondary" id="loadMeBtn">读取用户</button>
+            </div>
+            <div id="identityNotice" class="notice">保存 token 后即可使用用户侧功能。</div>
           </div>
         </section>
+      </div>
+    </aside>
 
-        <nav class="tabs">
-          <button class="active" data-tab="devices">设备</button>
-          <button data-tab="messages">消息</button>
-          <button data-tab="todos">TODO</button>
-          <button data-tab="weather">天气</button>
-          <button data-tab="telemetry">遥测</button>
-          <button data-tab="raw">调试</button>
-        </nav>
-
-        <section id="tab-devices" class="tab-panel active">
-          <div class="grid">
-            <div class="panel section">
-              <div class="section-title">
-                <h3>我的设备</h3>
-                <button class="secondary" id="refreshDevicesBtn">刷新</button>
-              </div>
-              <div id="devicesList" class="list"></div>
-            </div>
-            <div class="panel section">
-              <div class="section-title"><h3>设备操作</h3></div>
-              <input id="renameDeviceName" placeholder="新设备名称">
-              <div class="actions">
-                <button id="renameDeviceBtn">重命名</button>
-                <button class="danger" id="deleteDeviceBtn">删除设备</button>
-              </div>
-              <div class="notice">选择设备后可以重命名、删除、发送消息和查询遥测。</div>
-            </div>
+    <main>
+      <section class="hero">
+        <div class="hero-main">
+          <div>
+            <p class="eyebrow">Device Center</p>
+            <h2 id="heroTitle">未选择设备</h2>
           </div>
-        </section>
+          <div class="hero-meta">
+            <span class="pill mono" id="heroDeviceID">device: -</span>
+            <span class="pill" id="heroBound">未绑定</span>
+            <span class="pill" id="heroUser">user: -</span>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><span>设备</span><strong id="metricDevices">0</strong></div>
+          <div class="metric"><span>待确认消息</span><strong id="metricPending">0</strong></div>
+          <div class="metric"><span>TODO</span><strong id="metricTodos">0</strong></div>
+        </div>
+      </section>
 
-        <section id="tab-messages" class="tab-panel">
-          <div class="grid">
-            <div class="panel section">
-              <div class="section-title"><h3>发送消息</h3></div>
-              <textarea id="messageBody" placeholder="发送给当前设备的消息"></textarea>
-              <select id="messagePriority">
-                <option value="normal">normal</option>
-                <option value="high">high</option>
-              </select>
-              <button class="accent" id="sendMessageBtn">发送</button>
+      <nav class="tabs">
+        <button class="active" data-tab="devices">设备</button>
+        <button data-tab="messages">消息</button>
+        <button data-tab="todos">TODO</button>
+        <button data-tab="weather">天气</button>
+        <button data-tab="telemetry">遥测</button>
+        <button data-tab="raw">调试</button>
+      </nav>
+
+      <section id="tab-devices" class="tab-panel active">
+        <div class="grid">
+          <div class="panel section">
+            <div class="section-title">
+              <h3>我的设备</h3>
+              <button class="secondary" id="refreshDevicesBtn">刷新</button>
             </div>
-            <div class="panel section">
-              <div class="section-title">
-                <h3>设备收件箱模拟</h3>
-                <button class="secondary" id="pullDeviceMessagesBtn">拉取</button>
-              </div>
-              <div id="pendingMessages" class="list"></div>
-              <button id="ackAllMessagesBtn">确认全部</button>
-            </div>
+            <div id="devicesList" class="list"></div>
           </div>
           <div class="panel section">
             <div class="section-title">
-              <h3>消息历史</h3>
-              <button class="secondary" id="refreshMessagesBtn">刷新</button>
+              <h3>设备操作</h3>
             </div>
-            <div id="messageHistory" class="list"></div>
+            <input id="renameDeviceName" placeholder="新设备名称">
+            <div class="actions">
+              <button id="renameDeviceBtn">重命名</button>
+              <button class="danger" id="deleteDeviceBtn">删除设备</button>
+            </div>
+            <div class="notice">选择设备后可以重命名、删除、发送消息和查询遥测。</div>
           </div>
-        </section>
-
-        <section id="tab-todos" class="tab-panel">
-          <div class="grid">
-            <div class="panel section">
-              <div class="section-title"><h3>新建 TODO</h3></div>
-              <input id="todoText" placeholder="例如：整理桌面">
-              <select id="todoStatus">
-                <option value="0">未完成</option>
-                <option value="1">正在完成</option>
-                <option value="2">已完成</option>
-              </select>
-              <button class="accent" id="createTodoBtn">创建</button>
-            </div>
-            <div class="panel section">
-              <div class="section-title">
-                <h3>TODO 列表</h3>
-                <button class="secondary" id="refreshTodosBtn">刷新</button>
-              </div>
-              <div id="todosList" class="list"></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="tab-weather" class="tab-panel">
-          <div class="grid">
-            <div class="panel section">
-              <div class="section-title">
-                <h3>天气</h3>
-                <button class="secondary" id="refreshWeatherBtn">刷新</button>
-              </div>
-              <div id="weatherBox" class="list"></div>
-            </div>
-            <div class="panel section">
-              <div class="section-title">
-                <h3>快照</h3>
-                <button class="secondary" id="refreshSnapshotBtn">刷新</button>
-              </div>
-              <pre id="snapshotRaw">{}</pre>
-            </div>
-          </div>
-        </section>
-
-        <section id="tab-telemetry" class="tab-panel">
-          <div class="grid">
-            <div class="panel section">
-              <div class="section-title"><h3>设备遥测模拟</h3></div>
-              <button class="accent" id="sendTelemetryBtn">上报单条</button>
-              <button id="sendTelemetryBatchBtn">批量上报 2 条</button>
-              <div class="notice">使用左侧设备凭据向 `/api/v1/device/telemetry` 上报。</div>
-            </div>
-            <div class="panel section">
-              <div class="section-title">
-                <h3>当前设备遥测</h3>
-                <button class="secondary" id="refreshTelemetryBtn">刷新</button>
-              </div>
-              <div id="telemetryList" class="list"></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="tab-raw" class="tab-panel">
           <div class="panel section">
             <div class="section-title">
-              <h3>最近响应</h3>
-              <button class="secondary" id="clearLogBtn">清空</button>
+              <h3>绑定设备</h3>
             </div>
-            <pre id="rawLog">Ready.</pre>
+            <div class="two">
+              <input id="bindCode" placeholder="绑定码">
+              <input id="bindName" placeholder="设备名称" value="书桌屏幕">
+            </div>
+            <button class="accent" id="bindDeviceBtn">绑定到当前用户</button>
+            <div id="deviceNotice" class="notice">输入设备显示的绑定码即可完成绑定。</div>
           </div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
 
-    <script>
-      const $ = (id) => document.getElementById(id);
-      const state = {
-        adminToken: localStorage.getItem("tp_admin_token") || "",
-        userToken: localStorage.getItem("tp_user_token") || "",
-        deviceID: localStorage.getItem("tp_device_id") || "tinypanel-001",
-        deviceSecret: localStorage.getItem("tp_device_secret") || "",
-        selectedDeviceID: localStorage.getItem("tp_selected_device") || "",
-        user: null,
-        devices: [],
-        pending: [],
-        todos: []
-      };
+      <section id="tab-messages" class="tab-panel">
+        <div class="grid">
+          <div class="panel section">
+            <div class="section-title">
+              <h3>发送消息</h3>
+            </div>
+            <textarea id="messageBody" placeholder="发送给当前设备的消息"></textarea>
+            <select id="messagePriority">
+              <option value="normal">normal</option>
+              <option value="high">high</option>
+            </select>
+            <button class="accent" id="sendMessageBtn">发送</button>
+          </div>
+        </div>
+        <div class="panel section">
+          <div class="section-title">
+            <h3>消息历史</h3>
+            <button class="secondary" id="refreshMessagesBtn">刷新</button>
+          </div>
+          <div id="messageHistory" class="list"></div>
+        </div>
+      </section>
 
-      function init() {
-        $("adminToken").value = state.adminToken;
-        $("userToken").value = state.userToken;
-        $("simDeviceID").value = state.deviceID;
-        $("simDeviceSecret").value = state.deviceSecret;
-        bindEvents();
-        checkHealth();
-        if (state.userToken) loadMe();
-        refreshDevices();
-        refreshTodos();
+      <section id="tab-todos" class="tab-panel">
+        <div class="grid">
+          <div class="panel section">
+            <div class="section-title">
+              <h3>新建 TODO</h3>
+            </div>
+            <input id="todoText" placeholder="例如：整理桌面">
+            <select id="todoStatus">
+              <option value="0">未完成</option>
+              <option value="1">正在完成</option>
+              <option value="2">已完成</option>
+            </select>
+            <button class="accent" id="createTodoBtn">创建</button>
+          </div>
+          <div class="panel section">
+            <div class="section-title">
+              <h3>TODO 列表</h3>
+              <button class="secondary" id="refreshTodosBtn">刷新</button>
+            </div>
+            <div id="todosList" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-weather" class="tab-panel">
+        <div class="grid">
+          <div class="panel section">
+            <div class="section-title">
+              <h3>天气</h3>
+              <button class="secondary" id="refreshWeatherBtn">刷新</button>
+            </div>
+            <div id="weatherBox" class="list"></div>
+          </div>
+          <div class="panel section">
+            <div class="section-title">
+              <h3>快照</h3>
+              <button class="secondary" id="refreshSnapshotBtn">刷新</button>
+            </div>
+            <pre id="snapshotRaw">{}</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-telemetry" class="tab-panel">
+        <div class="grid">
+          <div class="panel section">
+            <div class="section-title">
+              <h3>当前设备遥测</h3>
+              <button class="secondary" id="refreshTelemetryBtn">刷新</button>
+            </div>
+            <div id="telemetryList" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-raw" class="tab-panel">
+        <div class="panel section">
+          <div class="section-title">
+            <h3>最近响应</h3>
+            <button class="secondary" id="clearLogBtn">清空</button>
+          </div>
+          <pre id="rawLog">Ready.</pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      adminToken: localStorage.getItem("tp_admin_token") || "",
+      userToken: localStorage.getItem("tp_user_token") || "",
+      selectedDeviceID: localStorage.getItem("tp_selected_device") || "",
+      user: null,
+      devices: [],
+      todos: []
+    };
+
+    function init() {
+      $("adminToken").value = state.adminToken;
+      $("userToken").value = state.userToken;
+      bindEvents();
+      checkHealth();
+      if (state.userToken) loadMe();
+      refreshDevices();
+      refreshTodos();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".tabs button").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
+      $("saveTokensBtn").onclick = saveTokens;
+      $("createUserBtn").onclick = createUser;
+      $("loadMeBtn").onclick = loadMe;
+      $("bindDeviceBtn").onclick = bindDevice;
+      $("refreshDevicesBtn").onclick = refreshDevices;
+      $("renameDeviceBtn").onclick = renameDevice;
+      $("deleteDeviceBtn").onclick = deleteDevice;
+      $("sendMessageBtn").onclick = sendMessage;
+      $("refreshMessagesBtn").onclick = refreshMessages;
+      $("createTodoBtn").onclick = createTodo;
+      $("refreshTodosBtn").onclick = refreshTodos;
+      $("refreshWeatherBtn").onclick = refreshWeather;
+      $("refreshSnapshotBtn").onclick = refreshSnapshot;
+      $("refreshTelemetryBtn").onclick = refreshTelemetry;
+      $("clearLogBtn").onclick = () => $("rawLog").textContent = "Ready.";
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === name));
+      document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === "tab-" + name));
+    }
+
+    function saveTokens() {
+      state.adminToken = $("adminToken").value.trim();
+      state.userToken = $("userToken").value.trim();
+      localStorage.setItem("tp_admin_token", state.adminToken);
+      localStorage.setItem("tp_user_token", state.userToken);
+      notice("identityNotice", "已保存到浏览器。", "ok");
+      updateHero();
+    }
+
+    async function api(path, options = {}) {
+      const headers = new Headers(options.headers || {});
+      if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+      const res = await fetch(path, { ...options, headers });
+      let data = null;
+      if (res.status !== 204) {
+        const text = await res.text();
+        data = text ? JSON.parse(text) : null;
       }
-
-      function bindEvents() {
-        document.querySelectorAll(".tabs button").forEach((btn) => {
-          btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-        });
-        $("saveTokensBtn").onclick = saveTokens;
-        $("createUserBtn").onclick = createUser;
-        $("loadMeBtn").onclick = loadMe;
-        $("deviceHelloBtn").onclick = deviceHello;
-        $("bindDeviceBtn").onclick = bindDevice;
-        $("refreshDevicesBtn").onclick = refreshDevices;
-        $("renameDeviceBtn").onclick = renameDevice;
-        $("deleteDeviceBtn").onclick = deleteDevice;
-        $("sendMessageBtn").onclick = sendMessage;
-        $("refreshMessagesBtn").onclick = refreshMessages;
-        $("pullDeviceMessagesBtn").onclick = pullDeviceMessages;
-        $("ackAllMessagesBtn").onclick = ackAllMessages;
-        $("createTodoBtn").onclick = createTodo;
-        $("refreshTodosBtn").onclick = refreshTodos;
-        $("refreshWeatherBtn").onclick = refreshWeather;
-        $("refreshSnapshotBtn").onclick = refreshSnapshot;
-        $("sendTelemetryBtn").onclick = () => sendTelemetry(false);
-        $("sendTelemetryBatchBtn").onclick = () => sendTelemetry(true);
-        $("refreshTelemetryBtn").onclick = refreshTelemetry;
-        $("clearLogBtn").onclick = () => $("rawLog").textContent = "Ready.";
+      log({ method: options.method || "GET", path, status: res.status, response: data });
+      if (!res.ok) {
+        const message = data?.error || res.statusText;
+        throw new Error(message);
       }
+      return data;
+    }
 
-      function switchTab(name) {
-        document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === name));
-        document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === "tab-" + name));
+    function adminHeaders() {
+      return { Authorization: "Bearer " + $("adminToken").value.trim() };
+    }
+
+    function userHeaders() {
+      return { Authorization: "Bearer " + $("userToken").value.trim() };
+    }
+
+    async function checkHealth() {
+      try {
+        await api("/healthz");
+        $("healthDot").classList.add("ok");
+      } catch {
+        $("healthDot").classList.remove("ok");
       }
+    }
 
-      function saveTokens() {
-        state.adminToken = $("adminToken").value.trim();
-        state.userToken = $("userToken").value.trim();
-        state.deviceID = $("simDeviceID").value.trim() || "tinypanel-001";
-        state.deviceSecret = $("simDeviceSecret").value.trim();
-        localStorage.setItem("tp_admin_token", state.adminToken);
-        localStorage.setItem("tp_user_token", state.userToken);
-        localStorage.setItem("tp_device_id", state.deviceID);
-        localStorage.setItem("tp_device_secret", state.deviceSecret);
-        notice("identityNotice", "已保存到浏览器。", "ok");
-        updateHero();
-      }
-
-      async function api(path, options = {}) {
-        const headers = new Headers(options.headers || {});
-        if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-        const res = await fetch(path, { ...options, headers });
-        let data = null;
-        if (res.status !== 204) {
-          const text = await res.text();
-          data = text ? JSON.parse(text) : null;
-        }
-        log({ method: options.method || "GET", path, status: res.status, response: data });
-        if (!res.ok) {
-          const message = data?.error || res.statusText;
-          throw new Error(message);
-        }
-        return data;
-      }
-
-      function adminHeaders() {
-        return { Authorization: "Bearer " + $("adminToken").value.trim() };
-      }
-
-      function userHeaders() {
-        return { Authorization: "Bearer " + $("userToken").value.trim() };
-      }
-
-      function deviceHeaders() {
-        return {
-          "X-Device-ID": $("simDeviceID").value.trim(),
-          "X-Device-Secret": $("simDeviceSecret").value.trim()
+    async function createUser() {
+      try {
+        const body = {
+          name: $("newUserName").value.trim(),
+          email: $("newUserEmail").value.trim(),
+          api_token: $("newUserToken").value.trim()
         };
+        const data = await api("/api/v1/admin/users", {
+          method: "POST",
+          headers: adminHeaders(),
+          body: JSON.stringify(body)
+        });
+        $("userToken").value = data.api_token;
+        saveTokens();
+        state.user = data.user;
+        notice("identityNotice", "用户已创建并切换。", "ok");
+        updateHero();
+      } catch (err) {
+        notice("identityNotice", err.message, "error");
       }
+    }
 
-      async function checkHealth() {
-        try {
-          await api("/healthz");
-          $("healthDot").classList.add("ok");
-        } catch {
-          $("healthDot").classList.remove("ok");
-        }
+    async function loadMe() {
+      try {
+        const data = await api("/api/v1/me", { headers: userHeaders() });
+        state.user = data;
+        notice("identityNotice", `当前用户：${data.name || data.id}`, "ok");
+        updateHero();
+      } catch (err) {
+        notice("identityNotice", err.message, "error");
       }
+    }
 
-      async function createUser() {
-        try {
-          const body = {
-            name: $("newUserName").value.trim(),
-            email: $("newUserEmail").value.trim(),
-            api_token: $("newUserToken").value.trim()
-          };
-          const data = await api("/api/v1/admin/users", {
-            method: "POST",
-            headers: adminHeaders(),
-            body: JSON.stringify(body)
-          });
-          $("userToken").value = data.api_token;
-          saveTokens();
-          state.user = data.user;
-          notice("identityNotice", "用户已创建并切换。", "ok");
-          updateHero();
-        } catch (err) {
-          notice("identityNotice", err.message, "error");
-        }
+    async function bindDevice() {
+      try {
+        const data = await api("/api/v1/devices/bind", {
+          method: "POST",
+          headers: userHeaders(),
+          body: JSON.stringify({
+            bind_code: $("bindCode").value.trim(),
+            name: $("bindName").value.trim()
+          })
+        });
+        state.selectedDeviceID = data.id;
+        localStorage.setItem("tp_selected_device", data.id);
+        notice("deviceNotice", "设备已绑定。", "ok");
+        await refreshDevices();
+      } catch (err) {
+        notice("deviceNotice", err.message, "error");
       }
+    }
 
-      async function loadMe() {
-        try {
-          const data = await api("/api/v1/me", { headers: userHeaders() });
-          state.user = data;
-          notice("identityNotice", `当前用户：${data.name || data.id}`, "ok");
-          updateHero();
-        } catch (err) {
-          notice("identityNotice", err.message, "error");
+    async function refreshDevices() {
+      try {
+        if (!$("userToken").value.trim()) return;
+        state.devices = await api("/api/v1/devices", { headers: userHeaders() });
+        if (!state.selectedDeviceID && state.devices.length) state.selectedDeviceID = state.devices[0].id;
+        if (state.selectedDeviceID && !state.devices.some((d) => d.id === state.selectedDeviceID)) {
+          state.selectedDeviceID = state.devices[0]?.id || "";
         }
+        localStorage.setItem("tp_selected_device", state.selectedDeviceID);
+        renderDevices();
+        updateHero();
+        if (state.selectedDeviceID) {
+          refreshMessages();
+          refreshTelemetry();
+        }
+      } catch (err) {
+        renderError("devicesList", err.message);
       }
+    }
 
-      async function deviceHello() {
-        try {
-          const headers = {};
-          const id = $("simDeviceID").value.trim();
-          const secret = $("simDeviceSecret").value.trim();
-          if (id) headers["X-Device-ID"] = id;
-          if (secret) headers["X-Device-Secret"] = secret;
-          const data = await api("/api/v1/device/hello", { method: "POST", headers });
-          if (data.device_secret) $("simDeviceSecret").value = data.device_secret;
-          if (data.bind_code) $("bindCode").value = data.bind_code;
-          saveTokens();
-          notice("deviceNotice", data.bound ? "设备已绑定。" : `绑定码：${data.bind_code}`, "ok");
-          pullDeviceMessages();
-        } catch (err) {
-          notice("deviceNotice", err.message, "error");
-        }
+    function renderDevices() {
+      const box = $("devicesList");
+      if (!state.devices.length) {
+        box.innerHTML = `<div class="empty">暂无设备。先让设备 Hello，再用绑定码绑定。</div>`;
+        return;
       }
-
-      async function bindDevice() {
-        try {
-          const data = await api("/api/v1/devices/bind", {
-            method: "POST",
-            headers: userHeaders(),
-            body: JSON.stringify({
-              bind_code: $("bindCode").value.trim(),
-              name: $("bindName").value.trim()
-            })
-          });
-          state.selectedDeviceID = data.id;
-          localStorage.setItem("tp_selected_device", data.id);
-          notice("deviceNotice", "设备已绑定。", "ok");
-          await refreshDevices();
-        } catch (err) {
-          notice("deviceNotice", err.message, "error");
-        }
-      }
-
-      async function refreshDevices() {
-        try {
-          if (!$("userToken").value.trim()) return;
-          state.devices = await api("/api/v1/devices", { headers: userHeaders() });
-          if (!state.selectedDeviceID && state.devices.length) state.selectedDeviceID = state.devices[0].id;
-          if (state.selectedDeviceID && !state.devices.some((d) => d.id === state.selectedDeviceID)) {
-            state.selectedDeviceID = state.devices[0]?.id || "";
-          }
-          localStorage.setItem("tp_selected_device", state.selectedDeviceID);
-          renderDevices();
-          updateHero();
-          if (state.selectedDeviceID) {
-            refreshMessages();
-            refreshTelemetry();
-          }
-        } catch (err) {
-          renderError("devicesList", err.message);
-        }
-      }
-
-      function renderDevices() {
-        const box = $("devicesList");
-        if (!state.devices.length) {
-          box.innerHTML = `<div class="empty">暂无设备。先让设备 Hello，再用绑定码绑定。</div>`;
-          return;
-        }
-        box.innerHTML = state.devices.map((d) => `
+      box.innerHTML = state.devices.map((d) => `
           <div class="item">
             <div class="item-row">
               <div>
@@ -834,108 +789,81 @@
             <div class="muted">last seen: ${formatDate(d.last_seen_at)}</div>
           </div>
         `).join("");
-        box.querySelectorAll("[data-select-device]").forEach((btn) => {
-          btn.onclick = () => {
-            state.selectedDeviceID = btn.dataset.selectDevice;
-            localStorage.setItem("tp_selected_device", state.selectedDeviceID);
-            $("renameDeviceName").value = selectedDevice()?.name || "";
-            renderDevices();
-            updateHero();
-            refreshMessages();
-            refreshTelemetry();
-          };
+      box.querySelectorAll("[data-select-device]").forEach((btn) => {
+        btn.onclick = () => {
+          state.selectedDeviceID = btn.dataset.selectDevice;
+          localStorage.setItem("tp_selected_device", state.selectedDeviceID);
+          $("renameDeviceName").value = selectedDevice()?.name || "";
+          renderDevices();
+          updateHero();
+          refreshMessages();
+          refreshTelemetry();
+        };
+      });
+    }
+
+    async function renameDevice() {
+      const device = selectedDevice();
+      if (!device) return;
+      try {
+        await api(`/api/v1/devices/${encodeURIComponent(device.id)}`, {
+          method: "PATCH",
+          headers: userHeaders(),
+          body: JSON.stringify({ name: $("renameDeviceName").value.trim() })
         });
+        await refreshDevices();
+      } catch (err) {
+        renderError("devicesList", err.message);
       }
+    }
 
-      async function renameDevice() {
-        const device = selectedDevice();
-        if (!device) return;
-        try {
-          await api(`/api/v1/devices/${encodeURIComponent(device.id)}`, {
-            method: "PATCH",
-            headers: userHeaders(),
-            body: JSON.stringify({ name: $("renameDeviceName").value.trim() })
-          });
-          await refreshDevices();
-        } catch (err) {
-          renderError("devicesList", err.message);
-        }
+    async function deleteDevice() {
+      const device = selectedDevice();
+      if (!device) return;
+      if (!confirm(`删除设备 ${device.name || device.id}？`)) return;
+      try {
+        await api(`/api/v1/devices/${encodeURIComponent(device.id)}`, { method: "DELETE", headers: userHeaders() });
+        state.selectedDeviceID = "";
+        await refreshDevices();
+      } catch (err) {
+        renderError("devicesList", err.message);
       }
+    }
 
-      async function deleteDevice() {
-        const device = selectedDevice();
-        if (!device) return;
-        if (!confirm(`删除设备 ${device.name || device.id}？`)) return;
-        try {
-          await api(`/api/v1/devices/${encodeURIComponent(device.id)}`, { method: "DELETE", headers: userHeaders() });
-          state.selectedDeviceID = "";
-          await refreshDevices();
-        } catch (err) {
-          renderError("devicesList", err.message);
-        }
+    async function sendMessage() {
+      const device = selectedDevice();
+      if (!device) return alert("请先选择设备");
+      try {
+        await api(`/api/v1/devices/${encodeURIComponent(device.id)}/messages`, {
+          method: "POST",
+          headers: userHeaders(),
+          body: JSON.stringify({
+            body: $("messageBody").value.trim(),
+            priority: $("messagePriority").value
+          })
+        });
+        $("messageBody").value = "";
+        await refreshMessages();
+      } catch (err) {
+        renderError("messageHistory", err.message);
       }
+    }
 
-      async function sendMessage() {
-        const device = selectedDevice();
-        if (!device) return alert("请先选择设备");
-        try {
-          await api(`/api/v1/devices/${encodeURIComponent(device.id)}/messages`, {
-            method: "POST",
-            headers: userHeaders(),
-            body: JSON.stringify({
-              body: $("messageBody").value.trim(),
-              priority: $("messagePriority").value
-            })
-          });
-          $("messageBody").value = "";
-          await refreshMessages();
-          await pullDeviceMessages();
-        } catch (err) {
-          renderError("messageHistory", err.message);
-        }
+    async function refreshMessages() {
+      const device = selectedDevice();
+      if (!device) return renderEmpty("messageHistory", "请选择设备。");
+      try {
+        const data = await api(`/api/v1/devices/${encodeURIComponent(device.id)}/messages?limit=50`, { headers: userHeaders() });
+        renderMessages("messageHistory", data);
+      } catch (err) {
+        renderError("messageHistory", err.message);
       }
+    }
 
-      async function refreshMessages() {
-        const device = selectedDevice();
-        if (!device) return renderEmpty("messageHistory", "请选择设备。");
-        try {
-          const data = await api(`/api/v1/devices/${encodeURIComponent(device.id)}/messages?limit=50`, { headers: userHeaders() });
-          renderMessages("messageHistory", data);
-        } catch (err) {
-          renderError("messageHistory", err.message);
-        }
-      }
-
-      async function pullDeviceMessages() {
-        try {
-          const data = await api("/api/v1/device/messages?limit=20", { headers: deviceHeaders() });
-          state.pending = data.messages || [];
-          $("metricPending").textContent = state.pending.length;
-          renderMessages("pendingMessages", state.pending);
-        } catch (err) {
-          renderError("pendingMessages", err.message);
-        }
-      }
-
-      async function ackAllMessages() {
-        if (!state.pending.length) return;
-        try {
-          await api("/api/v1/device/messages/ack", {
-            method: "POST",
-            headers: deviceHeaders(),
-            body: JSON.stringify({ message_ids: state.pending.map((m) => m.id) })
-          });
-          await pullDeviceMessages();
-          await refreshMessages();
-        } catch (err) {
-          renderError("pendingMessages", err.message);
-        }
-      }
-
-      function renderMessages(id, messages) {
-        const box = $(id);
-        if (!messages || !messages.length) return renderEmpty(id, "暂无消息。");
-        box.innerHTML = messages.map((m) => `
+    function renderMessages(id, messages) {
+      const box = $(id);
+      if (!messages || !messages.length) return renderEmpty(id, "暂无消息。");
+      box.innerHTML = messages.map((m) => `
           <div class="item">
             <div class="item-row">
               <div class="item-title">${escapeHTML(m.body)}</div>
@@ -944,37 +872,37 @@
             <div class="muted">#${m.id} ${escapeHTML(m.status || "pending")} · ${formatDate(m.created_at)}</div>
           </div>
         `).join("");
-      }
+    }
 
-      async function createTodo() {
-        try {
-          await api("/api/v1/todos", {
-            method: "POST",
-            headers: userHeaders(),
-            body: JSON.stringify({ text: $("todoText").value.trim(), status: Number($("todoStatus").value) })
-          });
-          $("todoText").value = "";
-          await refreshTodos();
-        } catch (err) {
-          renderError("todosList", err.message);
-        }
+    async function createTodo() {
+      try {
+        await api("/api/v1/todos", {
+          method: "POST",
+          headers: userHeaders(),
+          body: JSON.stringify({ text: $("todoText").value.trim(), status: Number($("todoStatus").value) })
+        });
+        $("todoText").value = "";
+        await refreshTodos();
+      } catch (err) {
+        renderError("todosList", err.message);
       }
+    }
 
-      async function refreshTodos() {
-        try {
-          if (!$("userToken").value.trim()) return;
-          state.todos = await api("/api/v1/todos", { headers: userHeaders() });
-          $("metricTodos").textContent = state.todos.length;
-          renderTodos();
-        } catch (err) {
-          renderError("todosList", err.message);
-        }
+    async function refreshTodos() {
+      try {
+        if (!$("userToken").value.trim()) return;
+        state.todos = await api("/api/v1/todos", { headers: userHeaders() });
+        $("metricTodos").textContent = state.todos.length;
+        renderTodos();
+      } catch (err) {
+        renderError("todosList", err.message);
       }
+    }
 
-      function renderTodos() {
-        const box = $("todosList");
-        if (!state.todos.length) return renderEmpty("todosList", "暂无 TODO。");
-        box.innerHTML = state.todos.map((t) => `
+    function renderTodos() {
+      const box = $("todosList");
+      if (!state.todos.length) return renderEmpty("todosList", "暂无 TODO。");
+      box.innerHTML = state.todos.map((t) => `
           <div class="item">
             <div class="item-row">
               <div>
@@ -993,45 +921,45 @@
             </div>
           </div>
         `).join("");
-        box.querySelectorAll("[data-save-todo]").forEach((btn) => {
-          btn.onclick = () => updateTodo(Number(btn.dataset.saveTodo), Number(btn.dataset.version));
+      box.querySelectorAll("[data-save-todo]").forEach((btn) => {
+        btn.onclick = () => updateTodo(Number(btn.dataset.saveTodo), Number(btn.dataset.version));
+      });
+      box.querySelectorAll("[data-delete-todo]").forEach((btn) => {
+        btn.onclick = () => deleteTodo(Number(btn.dataset.deleteTodo), Number(btn.dataset.version));
+      });
+    }
+
+    async function updateTodo(id, version) {
+      const status = Number(document.querySelector(`[data-todo-status="${id}"]`).value);
+      try {
+        await api(`/api/v1/todos/${id}`, {
+          method: "PATCH",
+          headers: userHeaders(),
+          body: JSON.stringify({ version, status })
         });
-        box.querySelectorAll("[data-delete-todo]").forEach((btn) => {
-          btn.onclick = () => deleteTodo(Number(btn.dataset.deleteTodo), Number(btn.dataset.version));
+        await refreshTodos();
+      } catch (err) {
+        renderError("todosList", err.message);
+      }
+    }
+
+    async function deleteTodo(id, version) {
+      try {
+        await api(`/api/v1/todos/${id}`, {
+          method: "DELETE",
+          headers: userHeaders(),
+          body: JSON.stringify({ version })
         });
+        await refreshTodos();
+      } catch (err) {
+        renderError("todosList", err.message);
       }
+    }
 
-      async function updateTodo(id, version) {
-        const status = Number(document.querySelector(`[data-todo-status="${id}"]`).value);
-        try {
-          await api(`/api/v1/todos/${id}`, {
-            method: "PATCH",
-            headers: userHeaders(),
-            body: JSON.stringify({ version, status })
-          });
-          await refreshTodos();
-        } catch (err) {
-          renderError("todosList", err.message);
-        }
-      }
-
-      async function deleteTodo(id, version) {
-        try {
-          await api(`/api/v1/todos/${id}`, {
-            method: "DELETE",
-            headers: userHeaders(),
-            body: JSON.stringify({ version })
-          });
-          await refreshTodos();
-        } catch (err) {
-          renderError("todosList", err.message);
-        }
-      }
-
-      async function refreshWeather() {
-        try {
-          const data = await api("/api/v1/weather", { headers: userHeaders() });
-          $("weatherBox").innerHTML = `
+    async function refreshWeather() {
+      try {
+        const data = await api("/api/v1/weather", { headers: userHeaders() });
+        $("weatherBox").innerHTML = `
             <div class="item">
               <div class="item-row">
                 <div>
@@ -1043,39 +971,27 @@
               <div class="muted">humidity ${data.humidity ?? "-"} · updated ${formatDate(data.updated_at)}</div>
             </div>
           `;
-        } catch (err) {
-          renderError("weatherBox", err.message);
-        }
+      } catch (err) {
+        renderError("weatherBox", err.message);
       }
+    }
 
-      async function refreshSnapshot() {
-        try {
-          const data = await api("/api/v1/snapshot?include=weather,messages,todos,telemetry", { headers: userHeaders() });
-          $("snapshotRaw").textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-          $("snapshotRaw").textContent = err.message;
-        }
+    async function refreshSnapshot() {
+      try {
+        const data = await api("/api/v1/snapshot?include=weather,messages,todos,telemetry", { headers: userHeaders() });
+        $("snapshotRaw").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        $("snapshotRaw").textContent = err.message;
       }
+    }
 
-      async function sendTelemetry(batch) {
-        const item = sampleTelemetry();
-        const path = batch ? "/api/v1/device/telemetry/batch" : "/api/v1/device/telemetry";
-        const body = batch ? { items: [item, { ...sampleTelemetry(), sequence: item.sequence + 1 }] } : item;
-        try {
-          await api(path, { method: "POST", headers: deviceHeaders(), body: JSON.stringify(body) });
-          await refreshTelemetry();
-        } catch (err) {
-          renderError("telemetryList", err.message);
-        }
-      }
-
-      async function refreshTelemetry() {
-        const device = selectedDevice();
-        if (!device) return renderEmpty("telemetryList", "请选择设备。");
-        try {
-          const data = await api(`/api/v1/devices/${encodeURIComponent(device.id)}/telemetry?limit=20`, { headers: userHeaders() });
-          if (!data.length) return renderEmpty("telemetryList", "暂无遥测。");
-          $("telemetryList").innerHTML = data.map((t) => `
+    async function refreshTelemetry() {
+      const device = selectedDevice();
+      if (!device) return renderEmpty("telemetryList", "请选择设备。");
+      try {
+        const data = await api(`/api/v1/devices/${encodeURIComponent(device.id)}/telemetry?limit=20`, { headers: userHeaders() });
+        if (!data.length) return renderEmpty("telemetryList", "暂无遥测。");
+        $("telemetryList").innerHTML = data.map((t) => `
             <div class="item">
               <div class="item-row">
                 <div class="item-title">#${t.id} seq ${t.sequence}</div>
@@ -1084,111 +1000,68 @@
               <div class="muted">battery ${t.power?.battery?.percentage ?? "-"}% · temp ${t.environment?.shtc3?.temperature_c ?? "-"}°C</div>
             </div>
           `).join("");
-        } catch (err) {
-          renderError("telemetryList", err.message);
-        }
+      } catch (err) {
+        renderError("telemetryList", err.message);
       }
+    }
 
-      function sampleTelemetry() {
-        const now = new Date();
-        return {
-          schema_version: 1,
-          boot_id: "web-sim",
-          sequence: Math.floor(Date.now() / 1000),
-          report_timestamp: now.toISOString(),
-          uptime_s: 3600,
-          power: {
-            battery: {
-              raw_adc: 1882,
-              raw_voltage_mv: 3950,
-              voltage_mv: 3950,
-              percentage: Math.round(60 + Math.random() * 35),
-              status: "discharging"
-            },
-            usb_connected: false
-          },
-          environment: {
-            shtc3: {
-              temperature_c: Number((22 + Math.random() * 4).toFixed(1)),
-              humidity_rh: Number((45 + Math.random() * 8).toFixed(1)),
-              sensor_ok: true
-            }
-          },
-          network: {
-            wifi_connected: true,
-            ssid: "HomeNetwork",
-            rssi_dbm: -60,
-            ip: "192.168.3.42"
-          },
-          system: {
-            free_heap_bytes: 184320,
-            free_psram_bytes: 6291456,
-            ntp_sync: true
-          },
-          storage: {
-            sd_card_present: true,
-            sd_card_total_mb: 2048,
-            sd_card_used_mb: 512
-          },
-          app: { source: "web-ui" }
-        };
-      }
+    function selectedDevice() {
+      return state.devices.find((d) => d.id === state.selectedDeviceID) || null;
+    }
 
-      function selectedDevice() {
-        return state.devices.find((d) => d.id === state.selectedDeviceID) || null;
-      }
+    function updateHero() {
+      const device = selectedDevice();
+      $("metricDevices").textContent = state.devices.length;
+      $("metricPending").textContent = "0";
+      $("metricTodos").textContent = state.todos.length;
+      $("heroTitle").textContent = device?.name || device?.id || "未选择设备";
+      $("heroDeviceID").textContent = "device: " + (device?.id || "-");
+      $("heroBound").textContent = device ? "已绑定" : "未绑定";
+      $("heroUser").textContent = "user: " + (state.user?.name || state.user?.id || "-");
+      if (device) $("renameDeviceName").value = device.name || "";
+    }
 
-      function updateHero() {
-        const device = selectedDevice();
-        $("metricDevices").textContent = state.devices.length;
-        $("metricTodos").textContent = state.todos.length;
-        $("heroTitle").textContent = device?.name || device?.id || "未选择设备";
-        $("heroDeviceID").textContent = "device: " + (device?.id || $("simDeviceID").value.trim() || "-");
-        $("heroBound").textContent = device ? "已绑定" : "未绑定";
-        $("heroUser").textContent = "user: " + (state.user?.name || state.user?.id || "-");
-        if (device) $("renameDeviceName").value = device.name || "";
-      }
+    function renderEmpty(id, text) {
+      $(id).innerHTML = `<div class="empty">${escapeHTML(text)}</div>`;
+    }
 
-      function renderEmpty(id, text) {
-        $(id).innerHTML = `<div class="empty">${escapeHTML(text)}</div>`;
-      }
+    function renderError(id, text) {
+      $(id).innerHTML = `<div class="notice error">${escapeHTML(text)}</div>`;
+    }
 
-      function renderError(id, text) {
-        $(id).innerHTML = `<div class="notice error">${escapeHTML(text)}</div>`;
-      }
+    function notice(id, text, type) {
+      const el = $(id);
+      el.className = "notice " + (type || "");
+      el.textContent = text;
+    }
 
-      function notice(id, text, type) {
-        const el = $(id);
-        el.className = "notice " + (type || "");
-        el.textContent = text;
-      }
+    function log(value) {
+      $("rawLog").textContent = JSON.stringify(value, null, 2);
+    }
 
-      function log(value) {
-        $("rawLog").textContent = JSON.stringify(value, null, 2);
-      }
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString();
+    }
 
-      function formatDate(value) {
-        if (!value) return "-";
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString();
-      }
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
 
-      function escapeHTML(value) {
-        return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        }[ch]));
-      }
+    function escapeAttr(value) {
+      return escapeHTML(value).replace(/`/g, "&#96;");
+    }
 
-      function escapeAttr(value) {
-        return escapeHTML(value).replace(/`/g, "&#96;");
-      }
+    init();
+  </script>
+</body>
 
-      init();
-    </script>
-  </body>
 </html>
