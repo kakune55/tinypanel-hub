@@ -12,6 +12,13 @@ func pathString(r *http.Request, name string) string {
 	return strings.TrimSpace(chi.URLParam(r, name))
 }
 
+func requestDeviceID(r *http.Request, fallback string) string {
+	if id := strings.TrimSpace(fallback); id != "" {
+		return id
+	}
+	return strings.TrimSpace(r.Header.Get("X-Device-ID"))
+}
+
 func pathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
 	id, err := strconv.ParseInt(pathString(r, name), 10, 64)
 	if err != nil || id <= 0 {

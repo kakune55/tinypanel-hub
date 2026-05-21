@@ -109,6 +109,12 @@ GET /api/v1/snapshot
 
 用于客户端一次性获取当前天气、最近消息和最近遥测数据。
 
+可以用 `include` 裁剪响应字段：
+
+```http
+GET /api/v1/snapshot?include=weather,messages,todos
+```
+
 ### 天气
 
 ```http
@@ -130,6 +136,7 @@ GET /api/v1/messages?limit=20
 POST /api/v1/messages
 GET /api/v1/messages/{id}
 POST /api/v1/messages/{id}/ack
+POST /api/v1/messages/ack
 GET /api/v1/subscriptions/{channel}?device_id=tinypanel-001
 ```
 
@@ -163,6 +170,8 @@ Invoke-RestMethod "http://localhost:8080/api/v1/subscriptions/desk?device_id=tin
 Invoke-RestMethod http://localhost:8080/api/v1/messages/1 -Headers $headers
 Invoke-RestMethod http://localhost:8080/api/v1/messages/1/ack -Method Post -Headers $headers -ContentType "application/json" -Body '{"device_id":"tinypanel-001"}'
 ```
+
+设备 ID 也可以通过 `X-Device-ID` header 传递，便于设备端统一封装请求。
 
 ### TODO 列表
 
@@ -203,6 +212,7 @@ Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Delete -Headers $
 ```http
 GET /api/v1/telemetry?limit=50
 POST /api/v1/telemetry
+POST /api/v1/telemetry/batch
 ```
 
 当前遥测数据格式参考 `docs/遥测示例.json`。

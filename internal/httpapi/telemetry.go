@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -19,29 +20,8 @@ func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.DeviceID = strings.TrimSpace(req.DeviceID)
-	req.BootID = strings.TrimSpace(req.BootID)
-	req.Power.Battery.Status = strings.TrimSpace(req.Power.Battery.Status)
-	req.Network.SSID = strings.TrimSpace(req.Network.SSID)
-	req.Network.IP = strings.TrimSpace(req.Network.IP)
-	if req.DeviceID == "" {
-		writeError(w, http.StatusBadRequest, "device_id is required")
-		return
-	}
-	if req.SchemaVersion != 1 {
-		writeError(w, http.StatusBadRequest, "schema_version must be 1")
-		return
-	}
-	if req.BootID == "" {
-		writeError(w, http.StatusBadRequest, "boot_id is required")
-		return
-	}
-	if req.Sequence < 0 {
-		writeError(w, http.StatusBadRequest, "sequence must be greater than or equal to 0")
-		return
-	}
-	if req.ReportTimestamp.IsZero() {
-		writeError(w, http.StatusBadRequest, "report_timestamp is required")
+	if err := normalizeTelemetry(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -51,4 +31,62 @@ func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
+}
+
+func (s *Server) handlePostTelemetryBatch(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Items []domain.Telemetry `json:"items"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if len(req.Items) == 0 {
+		writeError(w, http.StatusBadRequest, "items is required")
+		return
+	}
+	if len(req.Items) > 100 {
+		writeError(w, http.StatusBadRequest, "items must not exceed 100")
+		return
+	}
+	for i := range req.Items {
+		if err := normalizeTelemetry(r, &req.Items[i]); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	items, err := s.services.Telemetry.CreateBatch(req.Items)
+	if err != nil {
+		s.writeStoreError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"count": len(items),
+		"items": items,
+	})
+}
+
+func normalizeTelemetry(r *http.Request, item *domain.Telemetry) error {
+	item.DeviceID = requestDeviceID(r, item.DeviceID)
+	item.BootID = strings.TrimSpace(item.BootID)
+	item.Power.Battery.Status = strings.TrimSpace(item.Power.Battery.Status)
+	item.Network.SSID = strings.TrimSpace(item.Network.SSID)
+	item.Network.IP = strings.TrimSpace(item.Network.IP)
+	if item.DeviceID == "" {
+		return errors.New("device_id is required")
+	}
+	if item.SchemaVersion != 1 {
+		return errors.New("schema_version must be 1")
+	}
+	if item.BootID == "" {
+		return errors.New("boot_id is required")
+	}
+	if item.Sequence < 0 {
+		return errors.New("sequence must be greater than or equal to 0")
+	}
+	if item.ReportTimestamp.IsZero() {
+		return errors.New("report_timestamp is required")
+	}
+	return nil
 }

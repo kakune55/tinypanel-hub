@@ -25,6 +25,7 @@ func (s *Server) routes() {
 		r.Route("/messages", func(r chi.Router) {
 			r.Get("/", s.handleGetMessages)
 			r.Post("/", s.handlePostMessage)
+			r.Post("/ack", s.handleAckMessages)
 			r.Get("/{id}", s.handleGetMessage)
 			r.Post("/{id}/ack", s.handleAckMessage)
 		})
@@ -41,6 +42,7 @@ func (s *Server) routes() {
 
 		r.Get("/telemetry", s.handleGetTelemetry)
 		r.Post("/telemetry", s.handlePostTelemetry)
+		r.Post("/telemetry/batch", s.handlePostTelemetryBatch)
 	})
 }
 

@@ -86,6 +86,40 @@ func TestMessagesStayInStateFile(t *testing.T) {
 	}
 }
 
+func TestMessageAcksPrunedWhenMessagesRotate(t *testing.T) {
+	dir := t.TempDir()
+	statePath := filepath.Join(dir, "state.json")
+	telemetryPath := filepath.Join(dir, "telemetry.jsonl")
+
+	s, err := OpenFiles(statePath, telemetryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.AddMessage("desk", "hub", "old")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.AckMessage("tinypanel-001", first.ID); err != nil || !ok {
+		t.Fatalf("ack ok=%v err=%v", ok, err)
+	}
+	for i := 0; i < maxMessages; i++ {
+		if _, err := s.AddMessage("desk", "hub", "new"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	reopened, err := OpenFiles(statePath, telemetryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := reopened.Message(first.ID); ok {
+		t.Fatalf("first message should have rotated out")
+	}
+	if ids := reopened.state.data.MessageAcks["tinypanel-001"]; len(ids) != 0 {
+		t.Fatalf("stale ack ids = %v", ids)
+	}
+}
+
 func TestTodosPersistAndUseCAS(t *testing.T) {
 	dir := t.TempDir()
 	statePath := filepath.Join(dir, "state.json")

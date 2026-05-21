@@ -1,13 +1,10 @@
 package httpapi
 
-import (
-	"net/http"
-	"strings"
-)
+import "net/http"
 
 func (s *Server) handleGetSubscription(w http.ResponseWriter, r *http.Request) {
 	channel := pathString(r, "channel")
-	deviceID := strings.TrimSpace(r.URL.Query().Get("device_id"))
+	deviceID := requestDeviceID(r, r.URL.Query().Get("device_id"))
 	limit := queryInt(r, "limit", 20, 1, 100)
 
 	if channel == "" {

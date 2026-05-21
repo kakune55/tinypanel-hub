@@ -232,6 +232,48 @@ func TestTelemetryUpload(t *testing.T) {
 	}
 }
 
+func TestTelemetryBatchUpload(t *testing.T) {
+	store := newMemoryStore()
+	handler := New(store, slog.Default(), Options{APIToken: "secret"})
+
+	body := `{"items":[
+		{
+			"schema_version": 1,
+			"device_id": "tinypanel-001",
+			"boot_id": "boot",
+			"sequence": 1,
+			"report_timestamp": "2026-05-10T16:20:00+08:00",
+			"power": {"battery": {"status": "discharging"}},
+			"environment": {"shtc3": {}},
+			"network": {},
+			"system": {},
+			"storage": {},
+			"app": {}
+		},
+		{
+			"schema_version": 1,
+			"device_id": "tinypanel-001",
+			"boot_id": "boot",
+			"sequence": 2,
+			"report_timestamp": "2026-05-10T16:21:00+08:00",
+			"power": {"battery": {"status": "discharging"}},
+			"environment": {"shtc3": {}},
+			"network": {},
+			"system": {},
+			"storage": {},
+			"app": {}
+		}
+	]}`
+
+	rec := postJSON(t, handler, "/api/v1/telemetry/batch", body, http.StatusCreated)
+	if len(store.telemetry) != 2 {
+		t.Fatalf("telemetry count = %d, want 2", len(store.telemetry))
+	}
+	if !strings.Contains(rec.Body.String(), `"count":2`) {
+		t.Fatalf("unexpected telemetry batch response: %s", rec.Body.String())
+	}
+}
+
 func TestMessageSubscriptionFlow(t *testing.T) {
 	store := newMemoryStore()
 	handler := New(store, slog.Default(), Options{APIToken: "secret"})
@@ -249,6 +291,53 @@ func TestMessageSubscriptionFlow(t *testing.T) {
 	rec = getJSON(t, handler, "/api/v1/subscriptions/desk?device_id=tinypanel-001", http.StatusOK)
 	if !strings.Contains(rec.Body.String(), `"unread_count":0`) {
 		t.Fatalf("unexpected subscription response after ack: %s", rec.Body.String())
+	}
+}
+
+func TestMessageBatchAckUsesDeviceHeader(t *testing.T) {
+	store := newMemoryStore()
+	handler := New(store, slog.Default(), Options{APIToken: "secret"})
+
+	postJSON(t, handler, "/api/v1/messages", `{"channel":"desk","author":"hub","body":"first"}`, http.StatusCreated)
+	postJSON(t, handler, "/api/v1/messages", `{"channel":"desk","author":"hub","body":"second"}`, http.StatusCreated)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/messages/ack", strings.NewReader(`{"message_ids":[1,2]}`))
+	req.Header.Set("Authorization", "Bearer secret")
+	req.Header.Set("X-Device-ID", "tinypanel-001")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"acked_ids":[1,2]`) {
+		t.Fatalf("unexpected batch ack response: %s", rec.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/subscriptions/desk", nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	req.Header.Set("X-Device-ID", "tinypanel-001")
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"unread_count":0`) {
+		t.Fatalf("unexpected subscription response: status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSnapshotInclude(t *testing.T) {
+	store := newMemoryStore()
+	store.weather = domain.Weather{Location: "stored", Condition: "stored"}
+	store.todos = []domain.Todo{{ID: 1, Text: "todo", Version: 1}}
+	handler := New(store, slog.Default(), Options{APIToken: "secret"})
+
+	rec := getJSON(t, handler, "/api/v1/snapshot?include=weather,todos", http.StatusOK)
+	body := rec.Body.String()
+	if !strings.Contains(body, `"weather":`) || !strings.Contains(body, `"todos":`) {
+		t.Fatalf("filtered snapshot missing requested fields: %s", body)
+	}
+	if strings.Contains(body, `"messages":`) || strings.Contains(body, `"telemetry":`) {
+		t.Fatalf("filtered snapshot contains unrequested fields: %s", body)
 	}
 }
 

@@ -70,6 +70,7 @@ func (s *FileStore) AddMessage(channel, author, body string) (domain.Message, er
 	s.state.data.Messages = append(s.state.data.Messages, msg)
 	if len(s.state.data.Messages) > maxMessages {
 		s.state.data.Messages = s.state.data.Messages[len(s.state.data.Messages)-maxMessages:]
+		s.pruneMessageAcks()
 	}
 	return msg, s.state.save()
 }
@@ -129,6 +130,26 @@ func (s *FileStore) messageExists(id int64) bool {
 		}
 	}
 	return false
+}
+
+func (s *FileStore) pruneMessageAcks() {
+	existing := make(map[int64]bool, len(s.state.data.Messages))
+	for _, msg := range s.state.data.Messages {
+		existing[msg.ID] = true
+	}
+	for deviceID, ids := range s.state.data.MessageAcks {
+		kept := ids[:0]
+		for _, id := range ids {
+			if existing[id] {
+				kept = append(kept, id)
+			}
+		}
+		if len(kept) == 0 {
+			delete(s.state.data.MessageAcks, deviceID)
+			continue
+		}
+		s.state.data.MessageAcks[deviceID] = kept
+	}
 }
 
 func reverseMessages(items []domain.Message) {

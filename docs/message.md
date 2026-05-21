@@ -69,6 +69,13 @@ Authorization: Bearer change-me
 X-API-Token: change-me
 ```
 
+设备 ID 可以继续放在 query/body 的 `device_id` 字段里。新客户端也可以用 header 传递：
+
+```http
+X-Device-ID: tinypanel-001
+X-Protocol-Version: 1
+```
+
 后续示例默认使用：
 
 ```powershell
@@ -298,6 +305,33 @@ PowerShell 示例：
 Invoke-RestMethod http://localhost:8080/api/v1/messages/1/ack -Method Post -Headers $headers -ContentType "application/json" -Body '{"device_id":"tinypanel-001"}'
 ```
 
+### 批量确认消息
+
+```http
+POST /api/v1/messages/ack
+```
+
+请求体：
+
+```json
+{
+  "device_id": "tinypanel-001",
+  "message_ids": [1, 2, 3]
+}
+```
+
+`device_id` 也可以通过 `X-Device-ID` header 传递。单次最多确认 100 条消息。
+
+成功响应：`200 OK`
+
+```json
+{
+  "device_id": "tinypanel-001",
+  "acked_ids": [1, 2],
+  "missing_ids": [3]
+}
+```
+
 ## 设备端推荐流程
 
 1. 设备启动后确定自己的 `device_id`。
@@ -324,9 +358,15 @@ GET /api/v1/subscriptions/desk?device_id=tinypanel-001&limit=10
 
 ```json
 {
-  "error": "message"
+  "error": "message",
+  "error_detail": {
+    "code": "invalid_request",
+    "message": "message"
+  }
 }
 ```
+
+`error` 字段保留给旧客户端；新客户端建议读取 `error_detail.code` 和 `error_detail.message`。
 
 常见状态码：
 
@@ -344,6 +384,7 @@ GET /api/v1/subscriptions/desk?device_id=tinypanel-001&limit=10
 - 消息保存在 `messages` 中。
 - 每个设备的 ack 状态保存在 `message_acks` 中。
 - 默认最多保留最近 100 条消息。
+- 消息轮转时，会清理已经不存在的旧消息 ack。
 - 旧版本没有 `channel` 字段的消息会在加载时补成 `default`。
 
 这套实现适合当前轻量服务端。后续如果消息量变大，可以在不改变外部接口的前提下，把存储层替换成更适合查询和清理的实现。

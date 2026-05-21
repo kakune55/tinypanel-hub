@@ -73,7 +73,7 @@ func (s *Server) handleAckMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	req.DeviceID = requestDeviceID(r, req.DeviceID)
 	if req.DeviceID == "" {
 		writeError(w, http.StatusBadRequest, "device_id is required")
 		return
@@ -94,4 +94,42 @@ func (s *Server) handleAckMessage(w http.ResponseWriter, r *http.Request) {
 		"message_id": id,
 		"acked":      true,
 	})
+}
+
+func (s *Server) handleAckMessages(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		DeviceID   string  `json:"device_id"`
+		MessageIDs []int64 `json:"message_ids"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	req.DeviceID = requestDeviceID(r, req.DeviceID)
+	if req.DeviceID == "" {
+		writeError(w, http.StatusBadRequest, "device_id is required")
+		return
+	}
+	if len(req.MessageIDs) == 0 {
+		writeError(w, http.StatusBadRequest, "message_ids is required")
+		return
+	}
+	if len(req.MessageIDs) > 100 {
+		writeError(w, http.StatusBadRequest, "message_ids must not exceed 100 items")
+		return
+	}
+	for _, id := range req.MessageIDs {
+		if id <= 0 {
+			writeError(w, http.StatusBadRequest, "message_ids must contain positive integers")
+			return
+		}
+	}
+
+	result, err := s.services.Messages.AckBatch(req.DeviceID, req.MessageIDs)
+	if err != nil {
+		s.writeStoreError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
