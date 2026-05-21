@@ -53,6 +53,34 @@ func TestUserDeviceIsolation(t *testing.T) {
 	userJSON(t, handler, http.MethodPost, "/api/v1/devices/tinypanel-001/messages", bobToken, `{"body":"bad"}`, http.StatusNotFound)
 }
 
+func TestTodoFlowAndUserIsolation(t *testing.T) {
+	handler := newTestHandler(t)
+
+	aliceToken := createUser(t, handler, "Alice")
+	bobToken := createUser(t, handler, "Bob")
+
+	rec := userJSON(t, handler, http.MethodPost, "/api/v1/todos", aliceToken, `{"text":"整理桌面","status":0}`, http.StatusCreated)
+	if !strings.Contains(rec.Body.String(), `"owner_id"`) || !strings.Contains(rec.Body.String(), `"version":1`) {
+		t.Fatalf("unexpected todo create response: %s", rec.Body.String())
+	}
+
+	rec = userJSON(t, handler, http.MethodGet, "/api/v1/todos", aliceToken, "", http.StatusOK)
+	if !strings.Contains(rec.Body.String(), `"text":"整理桌面"`) {
+		t.Fatalf("alice todo missing: %s", rec.Body.String())
+	}
+
+	rec = userJSON(t, handler, http.MethodGet, "/api/v1/todos", bobToken, "", http.StatusOK)
+	if strings.Contains(rec.Body.String(), `"text":"整理桌面"`) {
+		t.Fatalf("bob should not see alice todo: %s", rec.Body.String())
+	}
+
+	userJSON(t, handler, http.MethodGet, "/api/v1/todos/1", bobToken, "", http.StatusNotFound)
+	userJSON(t, handler, http.MethodPatch, "/api/v1/todos/1", aliceToken, `{"version":1,"status":1}`, http.StatusOK)
+	userJSON(t, handler, http.MethodPatch, "/api/v1/todos/1", aliceToken, `{"version":1,"status":2}`, http.StatusConflict)
+	userJSON(t, handler, http.MethodDelete, "/api/v1/todos/1", aliceToken, `{"version":2}`, http.StatusNoContent)
+	userJSON(t, handler, http.MethodGet, "/api/v1/todos/1", aliceToken, "", http.StatusNotFound)
+}
+
 func TestAuthFailures(t *testing.T) {
 	handler := newTestHandler(t)
 
