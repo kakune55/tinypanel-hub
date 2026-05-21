@@ -63,7 +63,7 @@ User -> Device -> Message
 
 ```http
 POST /api/v1/admin/users
-Authorization: Bearer change-me
+Authorization: Bearer tk-123
 ```
 
 请求体：

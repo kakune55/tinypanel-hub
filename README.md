@@ -60,7 +60,7 @@ go run ./cmd/tinypanel-hub
 {
   "server": {
     "addr": ":8080",
-    "api_token": "change-me"
+    "api_token": "tk-123"
   },
   "storage": {
     "data_file": "data/tinypanel.json",
@@ -97,7 +97,7 @@ go run ./cmd/tinypanel-hub
 ### 创建开发用户
 
 ```powershell
-$adminHeaders = @{ Authorization = "Bearer change-me" }
+$adminHeaders = @{ Authorization = "Bearer tk-123" }
 Invoke-RestMethod http://localhost:8080/api/v1/admin/users `
   -Method Post `
   -Headers $adminHeaders `

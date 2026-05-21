@@ -14,13 +14,13 @@
 请求头：
 
 ```http
-Authorization: Bearer change-me
+Authorization: Bearer tk-123
 ```
 
 也支持：
 
 ```http
-X-API-Token: change-me
+X-API-Token: tk-123
 ```
 
 当前管理接口：
