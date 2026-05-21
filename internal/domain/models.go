@@ -60,6 +60,7 @@ type Message struct {
 
 type Todo struct {
 	ID        int64     `json:"id"`
+	OwnerID   string    `json:"owner_id"`
 	Text      string    `json:"text"`
 	Status    int       `json:"status"`
 	Version   int64     `json:"version"`

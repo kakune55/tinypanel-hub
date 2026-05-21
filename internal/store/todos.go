@@ -6,31 +6,32 @@ import (
 	"tinypanel-hub/internal/domain"
 )
 
-func (s *FileStore) Todos() []domain.Todo {
+func (s *FileStore) Todos(ownerID string) []domain.Todo {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return append([]domain.Todo(nil), s.state.data.Todos...)
+	return s.ownerTodosLocked(ownerID)
 }
 
-func (s *FileStore) Todo(id int64) (domain.Todo, bool) {
+func (s *FileStore) Todo(ownerID string, id int64) (domain.Todo, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	index := s.todoIndex(id)
+	index := s.todoIndex(ownerID, id)
 	if index < 0 {
 		return domain.Todo{}, false
 	}
 	return s.state.data.Todos[index], true
 }
 
-func (s *FileStore) AddTodo(text string, status int) (domain.Todo, error) {
+func (s *FileStore) AddTodo(ownerID, text string, status int) (domain.Todo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	now := time.Now().UTC()
 	todo := domain.Todo{
 		ID:        s.state.data.NextTodoID,
+		OwnerID:   ownerID,
 		Text:      text,
 		Status:    status,
 		Version:   1,
@@ -42,11 +43,11 @@ func (s *FileStore) AddTodo(text string, status int) (domain.Todo, error) {
 	return todo, s.state.save()
 }
 
-func (s *FileStore) UpdateTodo(id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error) {
+func (s *FileStore) UpdateTodo(ownerID string, id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	index := s.todoIndex(id)
+	index := s.todoIndex(ownerID, id)
 	if index < 0 {
 		return domain.Todo{}, false, false, nil
 	}
@@ -67,11 +68,11 @@ func (s *FileStore) UpdateTodo(id, version int64, patch domain.TodoPatch) (domai
 	return todo, true, true, s.state.save()
 }
 
-func (s *FileStore) DeleteTodo(id, version int64) (bool, bool, error) {
+func (s *FileStore) DeleteTodo(ownerID string, id, version int64) (bool, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	index := s.todoIndex(id)
+	index := s.todoIndex(ownerID, id)
 	if index < 0 {
 		return false, false, nil
 	}
@@ -83,13 +84,23 @@ func (s *FileStore) DeleteTodo(id, version int64) (bool, bool, error) {
 	return true, true, s.state.save()
 }
 
-func (s *FileStore) todoIndex(id int64) int {
+func (s *FileStore) todoIndex(ownerID string, id int64) int {
 	for i, todo := range s.state.data.Todos {
-		if todo.ID == id {
+		if todo.ID == id && todo.OwnerID == ownerID {
 			return i
 		}
 	}
 	return -1
+}
+
+func (s *FileStore) ownerTodosLocked(ownerID string) []domain.Todo {
+	out := []domain.Todo{}
+	for _, todo := range s.state.data.Todos {
+		if todo.OwnerID == ownerID {
+			out = append(out, todo)
+		}
+	}
+	return out
 }
 
 func nextTodoID(items []domain.Todo) int64 {

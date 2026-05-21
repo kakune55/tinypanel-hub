@@ -156,7 +156,8 @@ func TestTodosPersistAndUseCAS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	todo, err := s.AddTodo("写 TODO 功能", 0)
+	ownerID := "usr_test"
+	todo, err := s.AddTodo(ownerID, "写 TODO 功能", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +166,7 @@ func TestTodosPersistAndUseCAS(t *testing.T) {
 	}
 
 	status := 1
-	updated, found, swapped, err := s.UpdateTodo(todo.ID, todo.Version, domain.TodoPatch{Status: &status})
+	updated, found, swapped, err := s.UpdateTodo(ownerID, todo.ID, todo.Version, domain.TodoPatch{Status: &status})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +175,7 @@ func TestTodosPersistAndUseCAS(t *testing.T) {
 	}
 
 	status = 2
-	_, found, swapped, err = s.UpdateTodo(todo.ID, 1, domain.TodoPatch{Status: &status})
+	_, found, swapped, err = s.UpdateTodo(ownerID, todo.ID, 1, domain.TodoPatch{Status: &status})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,12 +187,12 @@ func TestTodosPersistAndUseCAS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, ok := reopened.Todo(todo.ID)
+	got, ok := reopened.Todo(ownerID, todo.ID)
 	if !ok || got.Status != 1 || got.Version != 2 {
 		t.Fatalf("reopened todo = %+v ok=%v", got, ok)
 	}
 
-	found, swapped, err = reopened.DeleteTodo(todo.ID, 1)
+	found, swapped, err = reopened.DeleteTodo(ownerID, todo.ID, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +200,7 @@ func TestTodosPersistAndUseCAS(t *testing.T) {
 		t.Fatalf("stale delete found=%v swapped=%v", found, swapped)
 	}
 
-	found, swapped, err = reopened.DeleteTodo(todo.ID, 2)
+	found, swapped, err = reopened.DeleteTodo(ownerID, todo.ID, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

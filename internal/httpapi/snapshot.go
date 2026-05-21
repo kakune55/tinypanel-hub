@@ -8,7 +8,8 @@ import (
 )
 
 func (s *Server) handleSnapshot(w http.ResponseWriter, r *http.Request) {
-	snapshot, err := s.services.Snapshot.Get(r.Context())
+	user, _ := currentUser(r)
+	snapshot, err := s.services.Snapshot.Get(r.Context(), user.ID)
 	if err != nil {
 		s.logger.Error("weather provider error", "err", err)
 		writeError(w, http.StatusBadGateway, "weather provider error")

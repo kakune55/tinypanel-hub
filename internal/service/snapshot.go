@@ -11,8 +11,8 @@ type SnapshotService struct {
 	weather WeatherProvider
 }
 
-func (s SnapshotService) Get(ctx context.Context) (domain.Snapshot, error) {
-	snapshot := s.store.Snapshot()
+func (s SnapshotService) Get(ctx context.Context, ownerID string) (domain.Snapshot, error) {
+	snapshot := s.store.Snapshot(ownerID)
 	if s.weather != nil {
 		weather, err := s.weather.Current(ctx)
 		if err != nil {

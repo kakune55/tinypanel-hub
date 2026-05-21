@@ -19,7 +19,7 @@ func (s *Server) requireAdminAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !s.adminAuthorized(r) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="tinypanel-hub"`)
-			writeError(w, http.StatusUnauthorized, "missing or invalid api token")
+			writeError(w, http.StatusUnauthorized, "missing or invalid admin token")
 			return
 		}
 		next.ServeHTTP(w, r)

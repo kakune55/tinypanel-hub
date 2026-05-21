@@ -11,7 +11,7 @@ type WeatherProvider interface {
 }
 
 type SnapshotStore interface {
-	Snapshot() domain.Snapshot
+	Snapshot(ownerID string) domain.Snapshot
 }
 
 type WeatherStore interface {
@@ -42,11 +42,11 @@ type MessageStore interface {
 }
 
 type TodoStore interface {
-	Todos() []domain.Todo
-	Todo(id int64) (domain.Todo, bool)
-	AddTodo(text string, status int) (domain.Todo, error)
-	UpdateTodo(id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error)
-	DeleteTodo(id, version int64) (bool, bool, error)
+	Todos(ownerID string) []domain.Todo
+	Todo(ownerID string, id int64) (domain.Todo, bool)
+	AddTodo(ownerID, text string, status int) (domain.Todo, error)
+	UpdateTodo(ownerID string, id, version int64, patch domain.TodoPatch) (domain.Todo, bool, bool, error)
+	DeleteTodo(ownerID string, id, version int64) (bool, bool, error)
 }
 
 type TelemetryStore interface {
