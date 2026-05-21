@@ -221,9 +221,12 @@ Authorization: Bearer change-me
   "messages": [
     {
       "id": 1,
-      "channel": "desk",
-      "author": "hub",
+      "owner_id": "usr_x",
+      "device_id": "tinypanel-001",
+      "author_id": "usr_x",
       "body": "hello panel",
+      "priority": "normal",
+      "status": "pending",
       "created_at": "2026-05-10T04:00:00Z"
     }
   ],

@@ -107,7 +107,11 @@ GET /healthz
 GET /api/v1/snapshot
 ```
 
-用于客户端一次性获取当前天气、最近消息和最近遥测数据。
+用于用户侧一次性获取当前天气、最近消息和最近遥测数据。设备侧使用：
+
+```http
+GET /api/v1/device/snapshot
+```
 
 可以用 `include` 裁剪响应字段：
 
@@ -125,53 +129,50 @@ GET /api/v1/weather
 
 ### 消息通知
 
-服务端可以把消息推送到某个频道。设备端轮询订阅端点，只拿未读数量和消息 ID；再按 ID 拉取消息内容；处理完成后 ack，之后该消息不会再出现在该设备的未读列表里。
+Hub 使用 `User -> Device -> Message` 模型。用户绑定设备后，可以在 Hub 上向自己的设备发送消息；设备端轮询自己的收件箱，处理完成后 ack。
 
 详细协议见 [docs/message.md](docs/message.md)。
 
 接口：
 
 ```http
-GET /api/v1/messages?limit=20
-POST /api/v1/messages
-GET /api/v1/messages/{id}
-POST /api/v1/messages/{id}/ack
-POST /api/v1/messages/ack
-GET /api/v1/subscriptions/{channel}?device_id=tinypanel-001
+POST /api/v1/admin/users
+POST /api/v1/device/hello
+GET /api/v1/devices
+POST /api/v1/devices/bind
+POST /api/v1/devices/{device_id}/messages
+GET /api/v1/device/messages?limit=10
+POST /api/v1/device/messages/ack
 ```
 
-推送消息到频道：
+创建开发用户：
 
 ```powershell
 $headers = @{ Authorization = "Bearer change-me" }
-Invoke-RestMethod http://localhost:8080/api/v1/messages -Method Post -Headers $headers -ContentType "application/json" -Body '{"channel":"desk","author":"hub","body":"hello panel"}'
+Invoke-RestMethod http://localhost:8080/api/v1/admin/users -Method Post -Headers $headers -ContentType "application/json" -Body '{"name":"Alice","api_token":"alice-token"}'
 ```
 
-设备轮询未读消息 ID：
+设备首次 hello：
 
 ```powershell
-Invoke-RestMethod "http://localhost:8080/api/v1/subscriptions/desk?device_id=tinypanel-001" -Headers $headers
+Invoke-RestMethod http://localhost:8080/api/v1/device/hello -Method Post -Headers @{ "X-Device-ID" = "tinypanel-001" }
 ```
 
-返回示例：
-
-```json
-{
-  "device_id": "tinypanel-001",
-  "channel": "desk",
-  "unread_count": 1,
-  "message_ids": [1]
-}
-```
-
-拉取并确认消息：
+用户绑定设备并发送消息：
 
 ```powershell
-Invoke-RestMethod http://localhost:8080/api/v1/messages/1 -Headers $headers
-Invoke-RestMethod http://localhost:8080/api/v1/messages/1/ack -Method Post -Headers $headers -ContentType "application/json" -Body '{"device_id":"tinypanel-001"}'
+$userHeaders = @{ Authorization = "Bearer alice-token" }
+Invoke-RestMethod http://localhost:8080/api/v1/devices/bind -Method Post -Headers $userHeaders -ContentType "application/json" -Body '{"bind_code":"483921","name":"书桌屏幕"}'
+Invoke-RestMethod http://localhost:8080/api/v1/devices/tinypanel-001/messages -Method Post -Headers $userHeaders -ContentType "application/json" -Body '{"body":"hello panel"}'
 ```
 
-设备 ID 也可以通过 `X-Device-ID` header 传递，便于设备端统一封装请求。
+设备拉取并确认消息：
+
+```powershell
+$deviceHeaders = @{ "X-Device-ID" = "tinypanel-001"; "X-Device-Secret" = "device-secret" }
+Invoke-RestMethod http://localhost:8080/api/v1/device/messages -Headers $deviceHeaders
+Invoke-RestMethod http://localhost:8080/api/v1/device/messages/ack -Method Post -Headers $deviceHeaders -ContentType "application/json" -Body '{"message_ids":[1]}'
+```
 
 ### TODO 列表
 
@@ -210,9 +211,9 @@ Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Delete -Headers $
 ### 遥测
 
 ```http
-GET /api/v1/telemetry?limit=50
-POST /api/v1/telemetry
-POST /api/v1/telemetry/batch
+GET /api/v1/devices/{device_id}/telemetry?limit=50
+POST /api/v1/device/telemetry
+POST /api/v1/device/telemetry/batch
 ```
 
 当前遥测数据格式参考 `docs/遥测示例.json`。
@@ -221,7 +222,7 @@ POST /api/v1/telemetry/batch
 
 ```powershell
 $headers = @{ Authorization = "Bearer change-me" }
-Invoke-RestMethod http://localhost:8080/api/v1/telemetry -Method Post -Headers $headers -ContentType "application/json" -Body (Get-Content docs/遥测示例.json -Raw)
+Invoke-RestMethod http://localhost:8080/api/v1/device/telemetry -Method Post -Headers $deviceHeaders -ContentType "application/json" -Body (Get-Content docs/遥测示例.json -Raw)
 ```
 
 ## 项目结构
@@ -233,7 +234,9 @@ internal/config/config.go       JSON 配置加载
 internal/domain/models.go       领域数据结构
 internal/store/state.go         JSON 状态文件
 internal/store/telemetry_log.go JSONL 遥测日志
-internal/store/messages.go      消息和订阅存储逻辑
+internal/store/messages.go      设备消息存储逻辑
+internal/store/devices.go       设备绑定存储逻辑
+internal/store/users.go         用户存储逻辑
 internal/store/todos.go         TODO 存储逻辑
 internal/store/telemetry.go     遥测存储逻辑
 internal/httpapi/server.go      HTTP Server 类型和入口
