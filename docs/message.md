@@ -1,4 +1,4 @@
-# 设备消息接口
+# 设备绑定和消息接口
 
 本文档描述 `tinypanel-hub` 的设备绑定和设备收件箱机制。
 
@@ -8,33 +8,62 @@
 User -> Device -> Message
 ```
 
-用户登录 Hub 后绑定自己的设备，再向设备发送消息。设备端只关心自己的收件箱，不再使用频道或订阅概念。
+用户绑定设备后，可以向自己的设备发送消息。设备端只拉取自己的待处理消息，显示或处理成功后 ack。
 
-## 鉴权
+## 数据结构
 
-用户侧 API 使用用户 Token：
+### User
 
-```http
-Authorization: Bearer user-token
+```json
+{
+  "id": "usr_8f2c1a7b",
+  "name": "Alice",
+  "email": "alice@example.com",
+  "created_at": "2026-05-21T00:00:00Z"
+}
 ```
 
-设备侧 API 使用设备凭据：
+### Device
 
-```http
-X-Device-ID: tinypanel-001
-X-Device-Secret: device-secret
+```json
+{
+  "id": "tinypanel-001",
+  "owner_id": "usr_8f2c1a7b",
+  "name": "书桌屏幕",
+  "bound_at": "2026-05-21T00:02:00Z",
+  "last_seen_at": "2026-05-21T00:03:00Z",
+  "created_at": "2026-05-21T00:01:00Z"
+}
 ```
 
-本地管理接口使用配置里的 `server.api_token`，用于创建开发账号：
+### Message
 
-```http
-Authorization: Bearer change-me
+```json
+{
+  "id": 1,
+  "owner_id": "usr_8f2c1a7b",
+  "device_id": "tinypanel-001",
+  "author_id": "usr_8f2c1a7b",
+  "body": "hello panel",
+  "priority": "normal",
+  "status": "pending",
+  "created_at": "2026-05-21T00:04:00Z"
+}
 ```
 
-## 创建用户
+字段说明：
+
+| 字段 | 说明 |
+| --- | --- |
+| `priority` | `normal` 或 `high` |
+| `status` | `pending` 或 `acked` |
+| `acked_at` | 设备确认消息后出现 |
+
+## 创建开发用户
 
 ```http
 POST /api/v1/admin/users
+Authorization: Bearer change-me
 ```
 
 请求体：
@@ -47,7 +76,21 @@ POST /api/v1/admin/users
 }
 ```
 
-`api_token` 可省略，服务端会生成一个并只在本次响应中返回。
+`api_token` 可省略。省略时服务端生成 token，并只在本次响应中返回。
+
+成功响应：
+
+```json
+{
+  "user": {
+    "id": "usr_8f2c1a7b",
+    "name": "Alice",
+    "email": "alice@example.com",
+    "created_at": "2026-05-21T00:00:00Z"
+  },
+  "api_token": "alice-token"
+}
+```
 
 ## 设备 hello
 
@@ -56,7 +99,9 @@ POST /api/v1/device/hello
 X-Device-ID: tinypanel-001
 ```
 
-首次请求不需要 `X-Device-Secret`。服务端会创建设备、返回设备 secret 和绑定码。
+首次 hello 不需要 `X-Device-Secret`。服务端会创建设备记录并返回设备 secret。
+
+首次响应：
 
 ```json
 {
@@ -65,11 +110,31 @@ X-Device-ID: tinypanel-001
   "bound": false,
   "bind_code": "483921",
   "bind_code_ttl": 600,
-  "server_time": "2026-05-21T00:00:00Z"
+  "server_time": "2026-05-21T00:01:00Z"
 }
 ```
 
-后续请求必须携带 `X-Device-Secret`。未绑定设备的绑定码默认有效 10 分钟，过期后再次 hello 会刷新。
+设备必须保存 `device_secret`。后续 hello：
+
+```http
+POST /api/v1/device/hello
+X-Device-ID: tinypanel-001
+X-Device-Secret: generated-secret
+```
+
+未绑定设备会继续返回绑定码。绑定码默认 10 分钟有效，过期后再次 hello 会刷新。
+
+已绑定设备响应：
+
+```json
+{
+  "device_id": "tinypanel-001",
+  "bound": true,
+  "name": "书桌屏幕",
+  "server_time": "2026-05-21T00:03:00Z",
+  "bound_at": "2026-05-21T00:02:00Z"
+}
+```
 
 ## 绑定设备
 
@@ -78,6 +143,8 @@ POST /api/v1/devices/bind
 Authorization: Bearer alice-token
 ```
 
+请求体：
+
 ```json
 {
   "bind_code": "483921",
@@ -85,19 +152,39 @@ Authorization: Bearer alice-token
 }
 ```
 
-成功后设备归属当前用户，绑定码失效。
+成功后，设备归属当前用户，绑定码立即失效。
 
-## 用户侧设备接口
+失败情况：
+
+| 状态码 | 场景 |
+| --- | --- |
+| `404` | 绑定码不存在 |
+| `409` | 绑定码过期或已被使用 |
+
+## 用户侧设备管理
 
 ```http
-GET    /api/v1/me
 GET    /api/v1/devices
 GET    /api/v1/devices/{device_id}
 PATCH  /api/v1/devices/{device_id}
 DELETE /api/v1/devices/{device_id}
 ```
 
-用户只能访问自己名下的设备。
+重命名设备：
+
+```http
+PATCH /api/v1/devices/tinypanel-001
+Authorization: Bearer alice-token
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "客厅屏幕"
+}
+```
+
+用户只能访问自己名下的设备。其他用户的设备会按 `404` 处理。
 
 ## 用户发送消息
 
@@ -106,6 +193,8 @@ POST /api/v1/devices/{device_id}/messages
 Authorization: Bearer alice-token
 ```
 
+请求体：
+
 ```json
 {
   "body": "hello panel",
@@ -113,20 +202,23 @@ Authorization: Bearer alice-token
 }
 ```
 
-`priority` 支持 `normal` 和 `high`，省略时默认为 `normal`。
+`body` 必填。`priority` 可省略，默认 `normal`。
 
-查询设备消息：
+查询设备消息历史：
 
 ```http
 GET /api/v1/devices/{device_id}/messages?limit=50
+Authorization: Bearer alice-token
 ```
 
-## 设备拉取和确认消息
+返回最近消息，按新到旧排序。
+
+## 设备拉取消息
 
 ```http
 GET /api/v1/device/messages?limit=10
 X-Device-ID: tinypanel-001
-X-Device-Secret: device-secret
+X-Device-Secret: generated-secret
 ```
 
 响应：
@@ -137,22 +229,27 @@ X-Device-Secret: device-secret
   "messages": [
     {
       "id": 1,
-      "owner_id": "usr_x",
+      "owner_id": "usr_8f2c1a7b",
       "device_id": "tinypanel-001",
-      "author_id": "usr_x",
+      "author_id": "usr_8f2c1a7b",
       "body": "hello panel",
       "priority": "normal",
       "status": "pending",
-      "created_at": "2026-05-21T00:00:00Z"
+      "created_at": "2026-05-21T00:04:00Z"
     }
   ]
 }
 ```
 
-确认消息：
+只返回当前设备的 `pending` 消息。
+
+## 设备确认消息
 
 ```http
 POST /api/v1/device/messages/ack
+X-Device-ID: tinypanel-001
+X-Device-Secret: generated-secret
+Content-Type: application/json
 ```
 
 ```json
@@ -170,21 +267,25 @@ POST /api/v1/device/messages/ack
 }
 ```
 
-## 设备遥测和快照
+如果某些 ID 不属于当前设备或不存在，会出现在 `missing_ids` 中。
 
-设备遥测使用设备凭据，不再由请求体决定 `device_id`：
-
-```http
-POST /api/v1/device/telemetry
-POST /api/v1/device/telemetry/batch
-GET  /api/v1/device/snapshot
+```json
+{
+  "device_id": "tinypanel-001",
+  "acked_ids": [1],
+  "missing_ids": [99]
+}
 ```
 
-用户可查询自己设备的遥测：
+## 设备快照
 
 ```http
-GET /api/v1/devices/{device_id}/telemetry?limit=50
+GET /api/v1/device/snapshot
+X-Device-ID: tinypanel-001
+X-Device-Secret: generated-secret
 ```
+
+当前返回天气和设备待处理消息。后续可继续加入设备端需要的轻量状态。
 
 ## 错误响应
 

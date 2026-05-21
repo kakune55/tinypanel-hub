@@ -2,7 +2,7 @@
 
 本文档描述 `tinypanel-hub` 的 TODO 列表接口。
 
-这套接口面向面板端和管理端，支持 TODO 的创建、查询、修改和删除。修改与删除使用 CAS，避免多个客户端同时操作时覆盖彼此的更新。
+这套接口面向用户侧 UI，支持 TODO 的创建、查询、修改和删除。TODO 归属当前用户，不会跨用户共享。修改与删除使用 CAS，避免多个客户端同时操作时覆盖彼此的更新。
 
 ## 核心思路
 
@@ -19,24 +19,18 @@ DELETE /api/v1/todos/{id}
 
 ## 鉴权
 
-如果配置了 `server.api_token`，所有 `/api/v1/` 接口都需要 Token。
+TODO API 属于用户侧 API，需要用户 Token。认证模型见 [auth.md](auth.md)。
 
 推荐使用：
 
 ```http
-Authorization: Bearer change-me
-```
-
-也可以使用：
-
-```http
-X-API-Token: change-me
+Authorization: Bearer alice-token
 ```
 
 后续示例默认使用：
 
 ```powershell
-$headers = @{ Authorization = "Bearer change-me" }
+$headers = @{ Authorization = "Bearer alice-token" }
 ```
 
 ## 数据结构
@@ -46,6 +40,7 @@ $headers = @{ Authorization = "Bearer change-me" }
 ```json
 {
   "id": 1,
+  "owner_id": "usr_8f2c1a7b",
   "text": "整理桌面",
   "status": 0,
   "version": 1,
@@ -59,6 +54,7 @@ $headers = @{ Authorization = "Bearer change-me" }
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | integer | 服务端生成的 TODO ID |
+| `owner_id` | string | TODO 所属用户 ID |
 | `text` | string | TODO 内容，去除首尾空白后不能为空，最多 50 个字符 |
 | `status` | integer | TODO 状态，取值见下表 |
 | `version` | integer | CAS 版本号，创建时为 `1`，每次修改成功后递增 |
@@ -102,6 +98,7 @@ POST /api/v1/todos
 ```json
 {
   "id": 1,
+  "owner_id": "usr_8f2c1a7b",
   "text": "整理桌面",
   "status": 0,
   "version": 1,
@@ -128,6 +125,7 @@ GET /api/v1/todos
 [
   {
     "id": 1,
+    "owner_id": "usr_8f2c1a7b",
     "text": "整理桌面",
     "status": 0,
     "version": 1,
@@ -160,6 +158,7 @@ GET /api/v1/todos/{id}
 ```json
 {
   "id": 1,
+  "owner_id": "usr_8f2c1a7b",
   "text": "整理桌面",
   "status": 0,
   "version": 1,
@@ -205,6 +204,7 @@ PATCH /api/v1/todos/{id}
 ```json
 {
   "id": 1,
+  "owner_id": "usr_8f2c1a7b",
   "text": "整理书桌",
   "status": 1,
   "version": 2,

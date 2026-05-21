@@ -54,13 +54,13 @@
 
 ```http
 GET /api/v1/weather
-Authorization: Bearer change-me
+Authorization: Bearer alice-token
 ```
 
 PowerShell 示例：
 
 ```powershell
-$headers = @{ Authorization = "Bearer change-me" }
+$headers = @{ Authorization = "Bearer alice-token" }
 Invoke-RestMethod http://localhost:8080/api/v1/weather -Headers $headers
 ```
 
@@ -164,11 +164,11 @@ Invoke-RestMethod http://localhost:8080/api/v1/weather -Headers $headers
 
 ## 面板快照中的天气
 
-`GET /api/v1/snapshot` 会返回当前天气、最近消息和最近遥测数据。启用和风天气后，快照里的 `weather` 字段同样来自天气缓存。
+`GET /api/v1/snapshot` 是用户侧快照接口。启用和风天气后，快照里的 `weather` 字段同样来自天气缓存。消息、TODO 和遥测会按当前用户过滤。
 
 ```http
 GET /api/v1/snapshot
-Authorization: Bearer change-me
+Authorization: Bearer alice-token
 ```
 
 响应示例：
@@ -236,7 +236,7 @@ Authorization: Bearer change-me
 
 ## 错误响应
 
-未携带或携带错误 Token：
+未携带或携带错误用户 Token：
 
 ```http
 HTTP/1.1 401 Unauthorized
@@ -246,7 +246,11 @@ WWW-Authenticate: Bearer realm="tinypanel-hub"
 
 ```json
 {
-  "error": "missing or invalid api token"
+  "error": "missing or invalid user token",
+  "error_detail": {
+    "code": "unauthorized",
+    "message": "missing or invalid user token"
+  }
 }
 ```
 
@@ -259,7 +263,11 @@ Content-Type: application/json; charset=utf-8
 
 ```json
 {
-  "error": "weather provider error"
+  "error": "weather provider error",
+  "error_detail": {
+    "code": "upstream_error",
+    "message": "weather provider error"
+  }
 }
 ```
 
