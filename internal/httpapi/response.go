@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 func readJSON(r *http.Request, dst any) error {
@@ -33,22 +32,4 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
-}
-
-func queryInt(r *http.Request, name string, fallback, min, max int) int {
-	raw := r.URL.Query().Get(name)
-	if raw == "" {
-		return fallback
-	}
-	n, err := strconv.Atoi(raw)
-	if err != nil {
-		return fallback
-	}
-	if n < min {
-		return min
-	}
-	if n > max {
-		return max
-	}
-	return n
 }

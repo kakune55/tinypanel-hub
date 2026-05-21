@@ -2,10 +2,7 @@ package httpapi
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
-
-	"github.com/go-chi/chi/v5"
 )
 
 const defaultMessageChannel = "default"
@@ -97,13 +94,4 @@ func (s *Server) handleAckMessage(w http.ResponseWriter, r *http.Request) {
 		"message_id": id,
 		"acked":      true,
 	})
-}
-
-func pathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
-	id, err := strconv.ParseInt(chi.URLParam(r, name), 10, 64)
-	if err != nil || id <= 0 {
-		writeError(w, http.StatusBadRequest, name+" must be a positive integer")
-		return 0, false
-	}
-	return id, true
 }
