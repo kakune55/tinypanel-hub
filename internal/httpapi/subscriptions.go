@@ -19,6 +19,6 @@ func (s *Server) handleGetSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sub := s.store.MessageSubscription(deviceID, channel, limit)
+	sub := s.services.Messages.Subscription(deviceID, channel, limit)
 	writeJSON(w, http.StatusOK, sub)
 }

@@ -9,7 +9,7 @@ import (
 
 func (s *Server) handleGetTelemetry(w http.ResponseWriter, r *http.Request) {
 	limit := queryInt(r, "limit", 50, 1, 500)
-	writeJSON(w, http.StatusOK, s.store.Telemetry(limit))
+	writeJSON(w, http.StatusOK, s.services.Telemetry.List(limit))
 }
 
 func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,7 @@ func (s *Server) handlePostTelemetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := s.store.AddTelemetry(req)
+	item, err := s.services.Telemetry.Create(req)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return

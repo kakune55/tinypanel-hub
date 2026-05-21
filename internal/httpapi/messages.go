@@ -9,7 +9,7 @@ const defaultMessageChannel = "default"
 
 func (s *Server) handleGetMessages(w http.ResponseWriter, r *http.Request) {
 	limit := queryInt(r, "limit", 20, 1, 100)
-	writeJSON(w, http.StatusOK, s.store.Messages(limit))
+	writeJSON(w, http.StatusOK, s.services.Messages.List(limit))
 }
 
 func (s *Server) handlePostMessage(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func (s *Server) handlePostMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := s.store.AddMessage(req.Channel, req.Author, req.Body)
+	msg, err := s.services.Messages.Create(req.Channel, req.Author, req.Body)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return
@@ -51,7 +51,7 @@ func (s *Server) handleGetMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, found := s.store.Message(id)
+	msg, found := s.services.Messages.Get(id)
 	if !found {
 		writeError(w, http.StatusNotFound, "message not found")
 		return
@@ -79,7 +79,7 @@ func (s *Server) handleAckMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, err := s.store.AckMessage(req.DeviceID, id)
+	found, err := s.services.Messages.Ack(req.DeviceID, id)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return

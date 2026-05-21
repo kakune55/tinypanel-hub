@@ -11,7 +11,7 @@ import (
 const maxTodoTextRunes = 50
 
 func (s *Server) handleGetTodos(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, s.store.Todos())
+	writeJSON(w, http.StatusOK, s.services.Todos.List())
 }
 
 func (s *Server) handlePostTodo(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func (s *Server) handlePostTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := s.store.AddTodo(text, req.Status)
+	todo, err := s.services.Todos.Create(text, req.Status)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return
@@ -47,7 +47,7 @@ func (s *Server) handleGetTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, found := s.store.Todo(id)
+	todo, found := s.services.Todos.Get(id)
 	if !found {
 		writeError(w, http.StatusNotFound, "todo not found")
 		return
@@ -95,7 +95,7 @@ func (s *Server) handlePatchTodo(w http.ResponseWriter, r *http.Request) {
 		patch.Status = req.Status
 	}
 
-	todo, found, swapped, err := s.store.UpdateTodo(id, req.Version, patch)
+	todo, found, swapped, err := s.services.Todos.Update(id, req.Version, patch)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return
@@ -132,7 +132,7 @@ func (s *Server) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, swapped, err := s.store.DeleteTodo(id, req.Version)
+	found, swapped, err := s.services.Todos.Delete(id, req.Version)
 	if err != nil {
 		s.writeStoreError(w, err)
 		return
