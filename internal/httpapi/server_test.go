@@ -81,6 +81,38 @@ func TestTodoFlowAndUserIsolation(t *testing.T) {
 	userJSON(t, handler, http.MethodGet, "/api/v1/todos/1", aliceToken, "", http.StatusNotFound)
 }
 
+func TestDeviceCanReadOwnerTodos(t *testing.T) {
+	handler := newTestHandler(t)
+
+	userToken := createUser(t, handler, "Alice")
+	hello := deviceHello(t, handler, "tinypanel-001", "")
+	deviceSecret := hello["device_secret"].(string)
+	bindCode := hello["bind_code"].(string)
+	userJSON(t, handler, http.MethodPost, "/api/v1/devices/bind", userToken, `{"bind_code":"`+bindCode+`","name":"书桌屏幕"}`, http.StatusOK)
+	userJSON(t, handler, http.MethodPost, "/api/v1/todos", userToken, `{"text":"同步到设备","status":0}`, http.StatusCreated)
+
+	rec := deviceJSON(t, handler, http.MethodGet, "/api/v1/device/todos", "tinypanel-001", deviceSecret, "", http.StatusOK)
+	if !strings.Contains(rec.Body.String(), `"text":"同步到设备"`) {
+		t.Fatalf("device todo missing: %s", rec.Body.String())
+	}
+
+	rec = deviceJSON(t, handler, http.MethodGet, "/api/v1/device/snapshot", "tinypanel-001", deviceSecret, "", http.StatusOK)
+	if !strings.Contains(rec.Body.String(), `"todos":[`) || !strings.Contains(rec.Body.String(), `"text":"同步到设备"`) {
+		t.Fatalf("device snapshot missing todos: %s", rec.Body.String())
+	}
+}
+
+func TestUnboundDeviceTodosAreEmpty(t *testing.T) {
+	handler := newTestHandler(t)
+
+	hello := deviceHello(t, handler, "tinypanel-002", "")
+	deviceSecret := hello["device_secret"].(string)
+	rec := deviceJSON(t, handler, http.MethodGet, "/api/v1/device/todos", "tinypanel-002", deviceSecret, "", http.StatusOK)
+	if strings.TrimSpace(rec.Body.String()) != "[]" {
+		t.Fatalf("unbound device todos = %s, want []", rec.Body.String())
+	}
+}
+
 func TestAuthFailures(t *testing.T) {
 	handler := newTestHandler(t)
 

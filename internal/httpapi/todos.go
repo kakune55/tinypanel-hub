@@ -15,6 +15,15 @@ func (s *Server) handleGetTodos(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.services.Todos.List(user.ID))
 }
 
+func (s *Server) handleDeviceTodos(w http.ResponseWriter, r *http.Request) {
+	device, _ := currentDevice(r)
+	if device.OwnerID == "" {
+		writeJSON(w, http.StatusOK, []domain.Todo{})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.services.Todos.List(device.OwnerID))
+}
+
 func (s *Server) handlePostTodo(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Text   string `json:"text"`

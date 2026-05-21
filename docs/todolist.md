@@ -33,6 +33,16 @@ Authorization: Bearer alice-token
 $headers = @{ Authorization = "Bearer alice-token" }
 ```
 
+设备端不需要保存用户 Token。已绑定设备可以使用设备凭据只读同步 TODO：
+
+```http
+GET /api/v1/device/todos
+X-Device-ID: tinypanel-001
+X-Device-Secret: generated-secret
+```
+
+设备快照 `GET /api/v1/device/snapshot` 也会包含 `todos` 字段。设备侧不能创建、修改或删除 TODO。
+
 ## 数据结构
 
 ### Todo
@@ -288,7 +298,7 @@ Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Delete -Headers $
 | 状态码 | 场景 |
 | --- | --- |
 | `400 Bad Request` | 请求体 JSON 错误、缺少 `text`、`text` 超过 50 个字符、`status` 非法、`version` 非法、ID 不是正整数 |
-| `401 Unauthorized` | 配置了 Token，但请求没有携带正确 Token |
+| `401 Unauthorized` | 请求没有携带正确用户 Token 或设备凭据 |
 | `404 Not Found` | 指定的 TODO 不存在 |
 | `409 Conflict` | 请求中的 `version` 不是当前版本 |
 | `500 Internal Server Error` | 服务端存储失败 |
@@ -299,6 +309,6 @@ Invoke-RestMethod http://localhost:8080/api/v1/todos/1 -Method Delete -Headers $
 
 - TODO 保存在 `todos` 中。
 - 下一个 TODO ID 保存在 `next_todo_id` 中。
-- TODO 会出现在 `GET /api/v1/snapshot` 的 `todos` 字段中。
+- TODO 会出现在用户侧 `GET /api/v1/snapshot` 和设备侧 `GET /api/v1/device/snapshot` 的 `todos` 字段中。
 
 这套实现适合当前轻量服务端。后续如果 TODO 需要分页、排序或软删除，可以在不改变外部接口的前提下继续扩展存储层。

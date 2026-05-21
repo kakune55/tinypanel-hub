@@ -33,6 +33,7 @@ func (s *Server) handleDeviceSnapshot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, domain.Snapshot{
 		Weather:  weather,
 		Messages: s.services.Messages.Pending(device.ID, 20),
+		Todos:    s.services.Todos.List(device.OwnerID),
 	})
 }
 

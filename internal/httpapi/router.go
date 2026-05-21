@@ -28,6 +28,7 @@ func (s *Server) routes() {
 			r.Use(s.requireDeviceAuth)
 			r.Get("/messages", s.handleDeviceMessages)
 			r.Post("/messages/ack", s.handleDeviceAckMessages)
+			r.Get("/todos", s.handleDeviceTodos)
 			r.Post("/telemetry", s.handleDeviceTelemetry)
 			r.Post("/telemetry/batch", s.handleDeviceTelemetryBatch)
 			r.Get("/snapshot", s.handleDeviceSnapshot)

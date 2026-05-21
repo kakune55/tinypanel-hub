@@ -85,6 +85,7 @@ X-Device-Secret: device-secret
 POST /api/v1/device/hello
 GET  /api/v1/device/messages
 POST /api/v1/device/messages/ack
+GET  /api/v1/device/todos
 POST /api/v1/device/telemetry
 POST /api/v1/device/telemetry/batch
 GET  /api/v1/device/snapshot

@@ -285,7 +285,17 @@ X-Device-ID: tinypanel-001
 X-Device-Secret: generated-secret
 ```
 
-当前返回天气和设备待处理消息。后续可继续加入设备端需要的轻量状态。
+当前返回天气、设备待处理消息和设备所属用户的 TODO。
+
+设备也可以单独读取 TODO：
+
+```http
+GET /api/v1/device/todos
+X-Device-ID: tinypanel-001
+X-Device-Secret: generated-secret
+```
+
+设备侧 TODO 是只读同步接口。创建、修改和删除 TODO 仍然属于用户侧 API。
 
 ## 错误响应
 
